@@ -1,10 +1,42 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function LoginPage() {
+    const router = useRouter();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setError("");
+        setIsLoading(true);
+
+        try {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                router.push("/dashboard");
+            } else {
+                setError(data.error || "Login failed");
+            }
+        } catch (err) {
+            setError("Something went wrong. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    }
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-secondary p-4 md:p-6 font-sans">
@@ -34,7 +66,13 @@ export default function LoginPage() {
                 </div>
 
                 {/* Form Fields */}
-                <form className="flex flex-col gap-5" onSubmit={(e) => e.preventDefault()}>
+                <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+
+                    {error && (
+                        <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-lg font-medium text-center">
+                            {error}
+                        </div>
+                    )}
 
                     {/* Email Field */}
                     <div className="space-y-2">
@@ -45,6 +83,9 @@ export default function LoginPage() {
                             </span>
                             <input
                                 type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
                                 placeholder="name@example.com"
                                 className="w-full bg-muted/50 border-none rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
                             />
@@ -65,6 +106,9 @@ export default function LoginPage() {
                             </span>
                             <input
                                 type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
                                 placeholder="••••••••"
                                 className="w-full bg-muted/50 border-none rounded-xl pl-11 pr-12 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
                             />
@@ -83,9 +127,13 @@ export default function LoginPage() {
                     </div>
 
                     {/* Submit Button */}
-                    <button className="bg-primary text-primary-foreground w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all mt-3 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20">
-                        Sign In
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></svg>
+                    <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="bg-primary text-primary-foreground w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all mt-3 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 disabled:opacity-70 disabled:pointer-events-none"
+                    >
+                        {isLoading ? "Signing in..." : "Sign In"}
+                        {!isLoading && <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></svg>}
                     </button>
                 </form>
 

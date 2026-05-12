@@ -3,14 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx --env-file=.env.local scripts/migrate.ts && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
     "argon2": "^0.44.0",
+    "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.1",
     "drizzle-zod": "^0.8.3",
     "jsonwebtoken": "^9.0.3",
@@ -26,9 +30,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

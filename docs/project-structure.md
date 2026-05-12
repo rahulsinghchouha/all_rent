@@ -144,7 +144,7 @@ app/utils/dbConnect.ts                 ← postgres.js → PostgreSQL
 | Route files | `route.ts` (API), `page.tsx` (UI) |
 | Store files | `<domain>.store.ts` |
 | Table files | `<entity>Table.ts` |
-| Validation files | `<entity>Validation.ts` |
+| Validation files | `<entity>Validation.ts` (All Zod schemas: e.g., login, signup) |
 | Hook files | `use<Name>.ts` |
 | Service files | `<domain>.ts` inside `services/` |
 

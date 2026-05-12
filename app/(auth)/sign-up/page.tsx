@@ -1,8 +1,10 @@
 "use client"
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, ChangeEvent } from "react";
 
 export default function SignUpPage() {
+    const router = useRouter();
     const [formData, setFormData] = useState({
         userName: "",
         email: "",
@@ -34,11 +36,7 @@ export default function SignUpPage() {
 
     const isNameValid = formData.userName.trim().length >= 3;
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
-    const hasUpperCase = /[A-Z]/.test(formData.password);
-    const hasLowerCase = /[a-z]/.test(formData.password);
-    const hasNumber = /[0-9]/.test(formData.password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>\-_]/.test(formData.password);
-    const isPasswordValid = hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
+    const isPasswordValid = formData.password.length >= 8;
     const isConfirmPasswordValid = formData.password === formData.confirmPassword && formData.confirmPassword.length > 0;
     const isTermsValid = formData.terms;
 
@@ -65,6 +63,7 @@ export default function SignUpPage() {
             const data = await response.json();
             if (response.ok) {
                 console.log('User created successfully:', data);
+                router.push('/dashboard');
             } else {
                 console.error('Error creating user:', data);
             }
@@ -166,7 +165,7 @@ export default function SignUpPage() {
                             />
                         </div>
                         {touched.password && !isPasswordValid && (
-                            <p className="text-[10px] text-red-500 font-medium">Password must be at least 8 characters long and include uppercase, lowercase, a number, and a special character.</p>
+                            <p className="text-[10px] text-red-500 font-medium">Password must be at least 8 characters long.</p>
                         )}
                     </div>
 

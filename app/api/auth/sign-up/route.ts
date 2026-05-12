@@ -61,6 +61,7 @@ export async function POST(req: Request) {
       data: newUser,
     });
   } catch (error: any) {
+    console.error("🔴 SIGN-UP ERROR:", error?.message, error);
     if (error.message === "Email already exists") {
       return NextResponse.json({ error: "Email already exists" }, { status: 409 });
     }
