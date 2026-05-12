@@ -4,7 +4,7 @@ import postgres from "postgres";
 const connectionString = process.env.DATABASE_URL!;
 
 const client = postgres(connectionString, {
-    max: 20, // connection pool
+    max: 20, 
 });
 
 export const db = drizzle(client);

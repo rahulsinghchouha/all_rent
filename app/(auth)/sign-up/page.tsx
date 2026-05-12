@@ -1,7 +1,79 @@
 "use client"
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, ChangeEvent } from "react";
 
 export default function SignUpPage() {
+    const router = useRouter();
+    const [formData, setFormData] = useState({
+        userName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        terms: false
+    });
+
+    const [touched, setTouched] = useState({
+        userName: false,
+        email: false,
+        password: false,
+        confirmPassword: false,
+        terms: false
+    });
+
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const { name, value, type, checked } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleBlur = (e: ChangeEvent<HTMLInputElement>) => {
+        const { name } = e.target;
+        setTouched(prev => ({ ...prev, [name]: true }));
+    };
+
+    const isNameValid = formData.userName.trim().length >= 3;
+    const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
+    const isPasswordValid = formData.password.length >= 8;
+    const isConfirmPasswordValid = formData.password === formData.confirmPassword && formData.confirmPassword.length > 0;
+    const isTermsValid = formData.terms;
+
+    const isFormValid = isNameValid && isEmailValid && isPasswordValid && isConfirmPasswordValid && isTermsValid;
+
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
+        if (!isFormValid) return;
+
+        try {
+            const userData = {
+                userName: formData.userName,
+                email: formData.email,
+                password: formData.password,
+                terms: formData.terms
+            };
+            const response = await fetch('/api/auth/sign-up', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
+            const data = await response.json();
+            if (response.ok) {
+                console.log('User created successfully:', data);
+                router.push('/dashboard');
+            } else {
+                console.error('Error creating user:', data);
+            }
+        }
+        catch (error) {
+            console.error('Error creating user:', error);
+        }
+
+    }
+
     return (
         <div className="flex min-h-screen items-center justify-center bg-secondary p-4 md:p-6 font-sans">
             {/* Card Container */}
@@ -27,92 +99,132 @@ export default function SignUpPage() {
                 </div>
 
                 {/* Form Fields */}
-                <form className="flex flex-col gap-5" onSubmit={(e) => e.preventDefault()}>
+                <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
                     {/* Name Row */}
                     <div className="flex flex-col md:flex-row gap-5">
                         <div className="flex-1 space-y-2">
-                            <label className="text-[10px] font-bold tracking-widest text-accent uppercase">First Name</label>
+                            <label className="text-[10px] font-bold tracking-widest text-accent uppercase">
+                                Full Name <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 placeholder="John"
+                                name="userName"
+                                value={formData.userName}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
                                 className="w-full bg-muted/50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
                             />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                            <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Last Name</label>
-                            <input
-                                type="text"
-                                placeholder="Doe"
-                                className="w-full bg-muted/50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
-                            />
+                            {touched.userName && !isNameValid && (
+                                <p className="text-[10px] text-red-500 font-medium">Name is required with at least 3 characters.</p>
+                            )}
                         </div>
                     </div>
 
                     {/* Email Field */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Email Address</label>
+                        <label className="text-[10px] font-bold tracking-widest text-accent uppercase">
+                            Email Address <span className="text-red-500">*</span>
+                        </label>
                         <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="11" x="2" y="5" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
                             </span>
                             <input
                                 type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
                                 placeholder="name@example.com"
                                 className="w-full bg-muted/50 border-none rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
                             />
                         </div>
-                    </div>
-
-                    {/* Phone Field */}
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Phone Number</label>
-                        <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-                            </span>
-                            <input
-                                type="tel"
-                                placeholder="+1 (555) 000-0000"
-                                className="w-full bg-muted/50 border-none rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
-                            />
-                        </div>
+                        {touched.email && !isEmailValid && (
+                            <p className="text-[10px] text-red-500 font-medium">Please enter a valid email address.</p>
+                        )}
                     </div>
 
                     {/* Password Field */}
                     <div className="space-y-2">
-                        <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Password</label>
+                        <label className="text-[10px] font-bold tracking-widest text-accent uppercase">
+                            Password <span className="text-red-500">*</span>
+                        </label>
                         <div className="relative">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                             </span>
                             <input
                                 type="password"
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
                                 placeholder="••••••••"
                                 className="w-full bg-muted/50 border-none rounded-xl pl-11 pr-12 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
                             />
-                            <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-accent transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88 3.59 3.59" /><path d="m21 21-6.29-6.29" /><path d="M12 17c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8Z" /><path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" /></svg>
-                            </button>
                         </div>
+                        {touched.password && !isPasswordValid && (
+                            <p className="text-[10px] text-red-500 font-medium">Password must be at least 8 characters long.</p>
+                        )}
+                    </div>
+
+                    {/* Confirm password */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-bold tracking-widest text-accent uppercase">
+                            Confirm Password <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                            </span>
+                            <input
+                                type="password"
+                                name="confirmPassword"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                placeholder="••••••••"
+                                className="w-full bg-muted/50 border-none rounded-xl pl-11 pr-12 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
+                            />
+                        </div>
+                        {touched.confirmPassword && !isConfirmPasswordValid && (
+                            <p className="text-[10px] text-red-500 font-medium">Passwords must match.</p>
+                        )}
                     </div>
 
                     {/* Agreement */}
-                    <div className="flex items-start gap-3 py-2">
-                        <div className="relative flex items-center">
-                            <input
-                                type="checkbox"
-                                id="terms"
-                                className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-border bg-white checked:bg-primary checked:border-primary transition-all shadow-sm"
-                            />
-                            <svg xmlns="http://www.w3.org/2000/svg" className="absolute h-3.5 w-3.5 scale-0 opacity-0 transition-all peer-checked:scale-100 peer-checked:opacity-100 peer-checked:translate-x-0.5 pointer-events-none text-white font-bold" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <div className="flex flex-col gap-1 py-2">
+                        <div className="flex items-start gap-3">
+                            <div className="relative flex items-center">
+                                <input
+                                    type="checkbox"
+                                    id="terms"
+                                    name="terms"
+                                    checked={formData.terms}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-border bg-white checked:bg-primary checked:border-primary transition-all shadow-sm"
+                                />
+                                <svg xmlns="http://www.w3.org/2000/svg" className="absolute h-3.5 w-3.5 scale-0 opacity-0 transition-all peer-checked:scale-100 peer-checked:opacity-100 peer-checked:translate-x-0.5 pointer-events-none text-white font-bold" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </div>
+                            <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer">
+                                I agree to the <Link href="/terms" className="text-primary font-bold hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-primary font-bold hover:underline">Privacy Policy</Link>. <span className="text-red-500">*</span>
+                            </label>
                         </div>
-                        <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer">
-                            I agree to the <Link href="/terms" className="text-primary font-bold hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-primary font-bold hover:underline">Privacy Policy</Link>.
-                        </label>
+                        {touched.terms && !isTermsValid && (
+                            <p className="text-[10px] text-red-500 font-medium">You must accept the terms and conditions.</p>
+                        )}
                     </div>
 
                     {/* Submit Button */}
-                    <button className="bg-primary text-primary-foreground w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20">
+                    <button
+                        disabled={!isFormValid}
+                        className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg ${!isFormValid
+                            ? 'bg-muted text-muted-foreground opacity-60 cursor-not-allowed'
+                            : 'bg-primary text-primary-foreground hover:scale-[1.02] active:scale-[0.98] shadow-primary/20'
+                            }`}
+                    >
                         Create Account
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
                     </button>
