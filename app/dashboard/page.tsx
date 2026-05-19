@@ -179,7 +179,7 @@ export default function DashboardPage() {
 
             {/* Nav Actions */}
             <div className="flex items-center gap-1 sm:gap-2">
-              <Link href="/list-item" className="hidden lg:flex items-center gap-1.5 text-sm font-semibold text-accent hover:text-primary transition-colors px-3 py-2 rounded-lg hover:bg-muted">
+              <Link href="/dashboard/listings/new" className="hidden lg:flex items-center gap-1.5 text-sm font-semibold text-accent hover:text-primary transition-colors px-3 py-2 rounded-lg hover:bg-muted">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
                 Become a Host
               </Link>
@@ -250,7 +250,7 @@ export default function DashboardPage() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
                 </button>
                 <Link
-                  href="/list-item"
+                  href="/dashboard/listings/new"
                   className="bg-white/15 hover:bg-white/25 text-white font-bold px-7 py-3.5 rounded-xl border border-white/30 transition-all hover:scale-105 active:scale-100 backdrop-blur-sm"
                 >
                   Start Listing
@@ -416,7 +416,7 @@ export default function DashboardPage() {
             Owners earn an average of $840/mo by renting and listing their items on Rental Flow.
           </p>
           <Link
-            href="/list-item"
+            href="/dashboard/listings/new"
             className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-8 py-4 rounded-xl transition-all hover:scale-105 active:scale-100 shadow-lg shadow-primary/30 text-lg"
           >
             Start Listing Today
