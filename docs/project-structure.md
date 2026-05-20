@@ -1,7 +1,7 @@
 # Project Structure
 
 > **Rents** — A Next.js 16 property-rental platform  
-> Stack: Next.js · TypeScript · Drizzle ORM · PostgreSQL · Zod · Argon2 · Tailwind CSS
+> Stack: Next.js · TypeScript · Drizzle ORM · PostgreSQL · Zod · Argon2 · Tailwind CSS · Redux Toolkit
 
 ---
 
@@ -68,9 +68,13 @@ app/
 ├── services/               # Business-logic layer (called by API routes)
 │   └── auth.ts             # createUserService, loginService, etc.
 │
-├── store/                  # Zustand global state
-│   ├── auth.store.ts       # Auth slice (user, token, actions)
-│   └── ui.store.ts         # UI slice (modals, sidebar, theme)
+├── store/                  # Redux Toolkit global state
+│   ├── store.ts            # configureStore — combines all slices
+│   ├── hooks.ts            # Typed useAppDispatch & useAppSelector
+│   ├── provider.tsx        # ReduxProvider client component
+│   ├── listingSlice.ts     # Listing create/edit slice (draft, stepper)
+│   ├── auth.store.ts       # (reserved) Auth slice
+│   └── ui.store.ts         # (reserved) UI slice (modals, sidebar, theme)
 │
 ├── tables/                 # Drizzle ORM table definitions
 │   └── usersTable.ts       # `users` table schema
@@ -109,7 +113,7 @@ app/
 | `hooks/` | Reusable stateful logic for client components |
 | `lib/` | Standalone server utilities (no React imports) |
 | `services/` | All business logic; tested independently of HTTP layer |
-| `store/` | Client-side global state via Zustand |
+| `store/` | Client-side global state via Redux Toolkit |
 | `tables/` | Database schema definitions (Drizzle) |
 | `tablesValidation/` | Input validation schemas (Drizzle-Zod + hand-crafted Zod) |
 | `types/` | Shared TypeScript contracts |
@@ -142,7 +146,7 @@ app/utils/dbConnect.ts                 ← postgres.js → PostgreSQL
 | Pattern | Example |
 |---------|---------|
 | Route files | `route.ts` (API), `page.tsx` (UI) |
-| Store files | `<domain>.store.ts` |
+| Store files | `<domain>Slice.ts` |
 | Table files | `<entity>Table.ts` |
 | Validation files | `<entity>Validation.ts` (All Zod schemas: e.g., login, signup) |
 | Hook files | `use<Name>.ts` |
