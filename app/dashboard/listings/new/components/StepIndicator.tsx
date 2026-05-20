@@ -1,6 +1,7 @@
 "use client";
 
-import { useListingStore, TOTAL_STEPS } from "@/app/store/listing.store";
+import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
+import { setStep, TOTAL_STEPS } from "@/app/store/listingSlice";
 
 const STEP_LABELS = [
   "Images",
@@ -13,7 +14,8 @@ const STEP_LABELS = [
 ];
 
 export default function StepIndicator() {
-  const { currentStep, setStep } = useListingStore();
+  const dispatch = useAppDispatch();
+  const currentStep = useAppSelector((s) => s.listing.currentStep);
 
   return (
     <div className="w-full">
@@ -34,7 +36,7 @@ export default function StepIndicator() {
           return (
             <button
               key={label}
-              onClick={() => step <= currentStep && setStep(step)}
+              onClick={() => step <= currentStep && dispatch(setStep(step))}
               className="flex flex-col items-center gap-2 relative z-10 group"
             >
               <div

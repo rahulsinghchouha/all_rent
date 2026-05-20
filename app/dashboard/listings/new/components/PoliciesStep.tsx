@@ -1,6 +1,7 @@
 "use client";
 
-import { useListingStore, type AddOn } from "@/app/store/listing.store";
+import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
+import { updateDraft, nextStep, prevStep, type AddOn } from "@/app/store/listingSlice";
 import { useState } from "react";
 
 const CANCELLATION_POLICIES = [
@@ -11,7 +12,8 @@ const CANCELLATION_POLICIES = [
 ] as const;
 
 export default function PoliciesStep() {
-  const { draft, updateDraft, nextStep, prevStep } = useListingStore();
+  const dispatch = useAppDispatch();
+  const draft = useAppSelector((s) => s.listing.draft);
   const [addOnName, setAddOnName] = useState("");
   const [addOnPrice, setAddOnPrice] = useState("");
 
@@ -20,20 +22,20 @@ export default function PoliciesStep() {
     const price = Number(addOnPrice);
     if (name && price >= 0) {
       const newAddOn: AddOn = { id: `${Date.now()}`, name, price, enabled: true };
-      updateDraft({ addOns: [...draft.addOns, newAddOn] });
+      dispatch(updateDraft({ addOns: [...draft.addOns, newAddOn] }));
       setAddOnName("");
       setAddOnPrice("");
     }
   }
 
   function removeAddOn(id: string) {
-    updateDraft({ addOns: draft.addOns.filter((a) => a.id !== id) });
+    dispatch(updateDraft({ addOns: draft.addOns.filter((a) => a.id !== id) }));
   }
 
   function toggleAddOn(id: string) {
-    updateDraft({
+    dispatch(updateDraft({
       addOns: draft.addOns.map((a) => (a.id === id ? { ...a, enabled: !a.enabled } : a)),
-    });
+    }));
   }
 
   return (
@@ -54,7 +56,7 @@ export default function PoliciesStep() {
                 <button
                   key={p.value}
                   type="button"
-                  onClick={() => updateDraft({ cancellationPolicy: p.value })}
+                  onClick={() => dispatch(updateDraft({ cancellationPolicy: p.value }))}
                   className={`p-4 rounded-xl border-2 text-left transition-all ${
                     draft.cancellationPolicy === p.value
                       ? "border-primary bg-primary/5"
@@ -70,7 +72,7 @@ export default function PoliciesStep() {
             {draft.cancellationPolicy === "custom" && (
               <textarea
                 value={draft.customCancellationText}
-                onChange={(e) => updateDraft({ customCancellationText: e.target.value })}
+                onChange={(e) => dispatch(updateDraft({ customCancellationText: e.target.value }))}
                 placeholder="Describe your custom cancellation policy..."
                 rows={3}
                 className="w-full bg-muted/50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none placeholder:text-muted-foreground/60"
@@ -86,7 +88,7 @@ export default function PoliciesStep() {
                 <button
                   key={type}
                   type="button"
-                  onClick={() => updateDraft({ depositChargeType: type })}
+                  onClick={() => dispatch(updateDraft({ depositChargeType: type }))}
                   className={`flex-1 p-3 rounded-xl border-2 text-center transition-all ${
                     draft.depositChargeType === type
                       ? "border-primary bg-primary/5 text-primary"
@@ -107,7 +109,7 @@ export default function PoliciesStep() {
             <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Usage Rules</label>
             <textarea
               value={draft.usageRules}
-              onChange={(e) => updateDraft({ usageRules: e.target.value })}
+              onChange={(e) => dispatch(updateDraft({ usageRules: e.target.value }))}
               placeholder="e.g. No smoking, handle with care, return cleaned..."
               rows={3}
               className="w-full bg-muted/50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none placeholder:text-muted-foreground/60"
@@ -136,7 +138,7 @@ export default function PoliciesStep() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => updateDraft({ [item.key]: !draft[item.key] })}
+                  onClick={() => dispatch(updateDraft({ [item.key]: !draft[item.key] }))}
                   className={`w-10 h-6 rounded-full transition-all shrink-0 ${draft[item.key] ? "bg-primary" : "bg-border"}`}
                 >
                   <div className={`w-4 h-4 bg-white rounded-full shadow transition-all ${draft[item.key] ? "translate-x-5" : "translate-x-1"}`} />
@@ -208,11 +210,11 @@ export default function PoliciesStep() {
 
       {/* Navigation */}
       <div className="flex justify-between pt-4">
-        <button onClick={prevStep} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-accent hover:bg-muted transition-colors border border-border">
+        <button onClick={() => dispatch(prevStep())} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-accent hover:bg-muted transition-colors border border-border">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
           Back
         </button>
-        <button onClick={nextStep} className="flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold bg-primary text-white hover:bg-primary/90 hover:scale-105 active:scale-100 shadow-lg shadow-primary/30 transition-all">
+        <button onClick={() => dispatch(nextStep())} className="flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold bg-primary text-white hover:bg-primary/90 hover:scale-105 active:scale-100 shadow-lg shadow-primary/30 transition-all">
           Next: Preview
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
         </button>

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useListingStore } from "@/app/store/listing.store";
+import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
+import { updateDraft } from "@/app/store/listingSlice";
 import StepIndicator from "./components/StepIndicator";
 import ImageUploadStep from "./components/ImageUploadStep";
 import ProductDetailsStep from "./components/ProductDetailsStep";
@@ -25,11 +26,12 @@ function StepContent({ step }: { step: number }) {
 }
 
 export default function NewListingPage() {
-  const { currentStep, draft, updateDraft } = useListingStore();
+  const dispatch = useAppDispatch();
+  const { currentStep, draft } = useAppSelector((s) => s.listing);
 
   // Auto-save toast simulation
   const handleSaveDraft = () => {
-    updateDraft({ status: "draft" });
+    dispatch(updateDraft({ status: "draft" }));
     // In production, this would call an API
     alert("Draft saved successfully!");
   };

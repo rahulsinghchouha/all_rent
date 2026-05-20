@@ -1,9 +1,11 @@
 "use client";
 
-import { useListingStore } from "@/app/store/listing.store";
+import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
+import { updateDraft, nextStep, prevStep } from "@/app/store/listingSlice";
 
 export default function LocationStep() {
-  const { draft, updateDraft, nextStep, prevStep } = useListingStore();
+  const dispatch = useAppDispatch();
+  const draft = useAppSelector((s) => s.listing.draft);
 
   const canProceed = draft.address.trim().length > 3;
 
@@ -28,7 +30,7 @@ export default function LocationStep() {
               <input
                 type="text"
                 value={draft.address}
-                onChange={(e) => updateDraft({ address: e.target.value })}
+                onChange={(e) => dispatch(updateDraft({ address: e.target.value }))}
                 placeholder="Search for address..."
                 className="w-full bg-muted/50 border-none rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
               />
@@ -40,7 +42,7 @@ export default function LocationStep() {
             <input
               type="text"
               value={draft.city}
-              onChange={(e) => updateDraft({ city: e.target.value })}
+              onChange={(e) => dispatch(updateDraft({ city: e.target.value }))}
               placeholder="e.g. San Francisco, CA"
               className="w-full bg-muted/50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
             />
@@ -65,7 +67,7 @@ export default function LocationStep() {
             </div>
             <button
               type="button"
-              onClick={() => updateDraft({ hideExactAddress: !draft.hideExactAddress })}
+              onClick={() => dispatch(updateDraft({ hideExactAddress: !draft.hideExactAddress }))}
               className={`w-10 h-6 rounded-full transition-all ${draft.hideExactAddress ? "bg-primary" : "bg-border"}`}
             >
               <div className={`w-4 h-4 bg-white rounded-full shadow transition-all ${draft.hideExactAddress ? "translate-x-5" : "translate-x-1"}`} />
@@ -82,7 +84,7 @@ export default function LocationStep() {
                 <button
                   key={opt}
                   type="button"
-                  onClick={() => updateDraft({ deliveryOption: opt })}
+                  onClick={() => dispatch(updateDraft({ deliveryOption: opt }))}
                   className={`p-3 rounded-xl border-2 text-center transition-all ${
                     draft.deliveryOption === opt
                       ? "border-primary bg-primary/5 text-primary"
@@ -107,7 +109,7 @@ export default function LocationStep() {
                 <input
                   type="number"
                   value={draft.deliveryRadius}
-                  onChange={(e) => updateDraft({ deliveryRadius: e.target.value ? Number(e.target.value) : "" })}
+                  onChange={(e) => dispatch(updateDraft({ deliveryRadius: e.target.value ? Number(e.target.value) : "" }))}
                   placeholder="e.g. 25"
                   className="w-full bg-white border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                 />
@@ -120,7 +122,7 @@ export default function LocationStep() {
                   <input
                     type="number"
                     value={draft.deliveryFee}
-                    onChange={(e) => updateDraft({ deliveryFee: e.target.value ? Number(e.target.value) : "" })}
+                    onChange={(e) => dispatch(updateDraft({ deliveryFee: e.target.value ? Number(e.target.value) : "" }))}
                     placeholder="0.00"
                     className="w-full bg-white border-none rounded-xl pl-8 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                   />
@@ -132,7 +134,7 @@ export default function LocationStep() {
                 <input
                   type="text"
                   value={draft.estimatedDeliveryTime}
-                  onChange={(e) => updateDraft({ estimatedDeliveryTime: e.target.value })}
+                  onChange={(e) => dispatch(updateDraft({ estimatedDeliveryTime: e.target.value }))}
                   placeholder="e.g. 1-2 hours"
                   className="w-full bg-white border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                 />
@@ -145,7 +147,7 @@ export default function LocationStep() {
               <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Pickup Instructions</label>
               <textarea
                 value={draft.pickupInstructions}
-                onChange={(e) => updateDraft({ pickupInstructions: e.target.value })}
+                onChange={(e) => dispatch(updateDraft({ pickupInstructions: e.target.value }))}
                 placeholder="e.g. Ring buzzer #3, I'll meet you at the lobby..."
                 rows={3}
                 className="w-full bg-muted/50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none placeholder:text-muted-foreground/60"
@@ -157,11 +159,11 @@ export default function LocationStep() {
 
       {/* Navigation */}
       <div className="flex justify-between pt-4">
-        <button onClick={prevStep} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-accent hover:bg-muted transition-colors border border-border">
+        <button onClick={() => dispatch(prevStep())} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-accent hover:bg-muted transition-colors border border-border">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
           Back
         </button>
-        <button onClick={nextStep} disabled={!canProceed} className={`flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold transition-all ${canProceed ? "bg-primary text-white hover:bg-primary/90 hover:scale-105 active:scale-100 shadow-lg shadow-primary/30" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
+        <button onClick={() => dispatch(nextStep())} disabled={!canProceed} className={`flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold transition-all ${canProceed ? "bg-primary text-white hover:bg-primary/90 hover:scale-105 active:scale-100 shadow-lg shadow-primary/30" : "bg-muted text-muted-foreground cursor-not-allowed"}`}>
           Next: Policies
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
         </button>

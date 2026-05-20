@@ -1,6 +1,7 @@
 "use client";
 
-import { useListingStore, type ImageFile } from "@/app/store/listing.store";
+import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
+import { updateDraft, nextStep, type ImageFile } from "@/app/store/listingSlice";
 import { useRef, useState } from "react";
 
 const MAX_IMAGES = 10;
@@ -8,7 +9,8 @@ const MAX_SIZE_MB = 10;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export default function ImageUploadStep() {
-  const { draft, updateDraft, nextStep } = useListingStore();
+  const dispatch = useAppDispatch();
+  const draft = useAppSelector((s) => s.listing.draft);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -43,7 +45,7 @@ export default function ImageUploadStep() {
     }));
 
     setErrors(newErrors);
-    updateDraft({ images: [...draft.images, ...newImages] });
+    dispatch(updateDraft({ images: [...draft.images, ...newImages] }));
   }
 
   function removeImage(id: string) {
@@ -51,13 +53,13 @@ export default function ImageUploadStep() {
     if (filtered.length > 0 && !filtered.some((img) => img.isCover)) {
       filtered[0].isCover = true;
     }
-    updateDraft({ images: filtered });
+    dispatch(updateDraft({ images: filtered }));
   }
 
   function setCover(id: string) {
-    updateDraft({
+    dispatch(updateDraft({
       images: draft.images.map((img) => ({ ...img, isCover: img.id === id })),
-    });
+    }));
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -185,7 +187,7 @@ export default function ImageUploadStep() {
       {/* Actions */}
       <div className="flex justify-end pt-4">
         <button
-          onClick={nextStep}
+          onClick={() => dispatch(nextStep())}
           disabled={!canProceed}
           className={`flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold transition-all ${
             canProceed

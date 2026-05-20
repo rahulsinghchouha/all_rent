@@ -1,6 +1,7 @@
 "use client";
 
-import { useListingStore } from "@/app/store/listing.store";
+import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
+import { updateDraft, nextStep, prevStep } from "@/app/store/listingSlice";
 import { useState, useMemo } from "react";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -18,7 +19,8 @@ function toDateStr(y: number, m: number, d: number) {
 }
 
 export default function AvailabilityStep() {
-  const { draft, updateDraft, nextStep, prevStep } = useListingStore();
+  const dispatch = useAppDispatch();
+  const draft = useAppSelector((s) => s.listing.draft);
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -42,7 +44,7 @@ export default function AvailabilityStep() {
 
   function toggleDate(dateStr: string) {
     if (blockedSet.has(dateStr)) {
-      updateDraft({ blockedDates: draft.blockedDates.filter((d) => d !== dateStr) });
+      dispatch(updateDraft({ blockedDates: draft.blockedDates.filter((d) => d !== dateStr) }));
       return;
     }
 
@@ -53,33 +55,33 @@ export default function AvailabilityStep() {
         const d = new Date(dateStr);
         return d < s || d > e;
       });
-      updateDraft({ availableRanges: newRanges });
+      dispatch(updateDraft({ availableRanges: newRanges }));
       return;
     }
 
     if (selecting) {
       const start = selecting < dateStr ? selecting : dateStr;
       const end = selecting > dateStr ? selecting : dateStr;
-      updateDraft({ availableRanges: [...draft.availableRanges, { start, end }] });
+      dispatch(updateDraft({ availableRanges: [...draft.availableRanges, { start, end }] }));
       setSelecting(null);
     } else {
       setSelecting(dateStr);
-      updateDraft({ availableRanges: [...draft.availableRanges, { start: dateStr, end: dateStr }] });
+      dispatch(updateDraft({ availableRanges: [...draft.availableRanges, { start: dateStr, end: dateStr }] }));
     }
   }
 
   function blockDate(dateStr: string) {
     if (blockedSet.has(dateStr)) {
-      updateDraft({ blockedDates: draft.blockedDates.filter((d) => d !== dateStr) });
+      dispatch(updateDraft({ blockedDates: draft.blockedDates.filter((d) => d !== dateStr) }));
     } else {
-      updateDraft({ blockedDates: [...draft.blockedDates, dateStr] });
+      dispatch(updateDraft({ blockedDates: [...draft.blockedDates, dateStr] }));
       const newRanges = draft.availableRanges.filter(({ start, end }) => {
         const s = new Date(start);
         const e = new Date(end);
         const d = new Date(dateStr);
         return d < s || d > e;
       });
-      updateDraft({ availableRanges: newRanges });
+      dispatch(updateDraft({ availableRanges: newRanges }));
     }
   }
 
@@ -103,15 +105,15 @@ export default function AvailabilityStep() {
         newRanges.push({ start: dateStr, end: dateStr });
       }
     }
-    updateDraft({ availableRanges: newRanges });
+    dispatch(updateDraft({ availableRanges: newRanges }));
   }
 
   function clearMonth() {
     const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
-    updateDraft({
+    dispatch(updateDraft({
       availableRanges: draft.availableRanges.filter(({ start }) => !start.startsWith(monthPrefix)),
       blockedDates: draft.blockedDates.filter((d) => !d.startsWith(monthPrefix)),
-    });
+    }));
   }
 
   const todayStr = toDateStr(today.getFullYear(), today.getMonth(), today.getDate());
@@ -198,18 +200,18 @@ export default function AvailabilityStep() {
 
             <div className="space-y-2">
               <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Quantity Available</label>
-              <input type="number" value={draft.quantity} onChange={(e) => updateDraft({ quantity: Math.max(1, Number(e.target.value)) })} min="1" className="w-full bg-white border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+              <input type="number" value={draft.quantity} onChange={(e) => dispatch(updateDraft({ quantity: Math.max(1, Number(e.target.value)) }))} min="1" className="w-full bg-white border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
               <p className="text-[10px] text-muted-foreground">Number of identical items.</p>
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Max Concurrent Bookings</label>
-              <input type="number" value={draft.maxConcurrent} onChange={(e) => updateDraft({ maxConcurrent: Math.max(1, Number(e.target.value)) })} min="1" className="w-full bg-white border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+              <input type="number" value={draft.maxConcurrent} onChange={(e) => dispatch(updateDraft({ maxConcurrent: Math.max(1, Number(e.target.value)) }))} min="1" className="w-full bg-white border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Buffer Days Between Bookings</label>
-              <input type="number" value={draft.bufferDays} onChange={(e) => updateDraft({ bufferDays: Math.max(0, Number(e.target.value)) })} min="0" className="w-full bg-white border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
+              <input type="number" value={draft.bufferDays} onChange={(e) => dispatch(updateDraft({ bufferDays: Math.max(0, Number(e.target.value)) }))} min="0" className="w-full bg-white border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
               <p className="text-[10px] text-muted-foreground">Rest days after each rental for cleaning / maintenance.</p>
             </div>
           </div>
@@ -223,11 +225,11 @@ export default function AvailabilityStep() {
 
       {/* Navigation */}
       <div className="flex justify-between pt-4">
-        <button onClick={prevStep} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-accent hover:bg-muted transition-colors border border-border">
+        <button onClick={() => dispatch(prevStep())} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-accent hover:bg-muted transition-colors border border-border">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
           Back
         </button>
-        <button onClick={nextStep} className="flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold bg-primary text-white hover:bg-primary/90 hover:scale-105 active:scale-100 shadow-lg shadow-primary/30 transition-all">
+        <button onClick={() => dispatch(nextStep())} className="flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold bg-primary text-white hover:bg-primary/90 hover:scale-105 active:scale-100 shadow-lg shadow-primary/30 transition-all">
           Next: Location
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
         </button>

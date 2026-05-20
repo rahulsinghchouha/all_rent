@@ -1,9 +1,11 @@
 "use client";
 
-import { useListingStore } from "@/app/store/listing.store";
+import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
+import { nextStep, prevStep, setStep } from "@/app/store/listingSlice";
 
 export default function PreviewStep() {
-  const { draft, nextStep, prevStep, setStep } = useListingStore();
+  const dispatch = useAppDispatch();
+  const draft = useAppSelector((s) => s.listing.draft);
 
   const coverImage = draft.images.find((img) => img.isCover) || draft.images[0];
   const dailyPrice = typeof draft.pricePerDay === "number" ? draft.pricePerDay : 0;
@@ -181,7 +183,7 @@ export default function PreviewStep() {
         {["Images", "Details", "Availability", "Location", "Policies"].map((label, i) => (
           <button
             key={label}
-            onClick={() => setStep(i + 1)}
+            onClick={() => dispatch(setStep(i + 1))}
             className="text-xs font-semibold text-primary hover:underline bg-primary/5 px-3 py-1.5 rounded-full transition-colors hover:bg-primary/10"
           >
             ✏️ Edit {label}
@@ -191,12 +193,12 @@ export default function PreviewStep() {
 
       {/* Navigation */}
       <div className="flex justify-between pt-4">
-        <button onClick={prevStep} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-accent hover:bg-muted transition-colors border border-border">
+        <button onClick={() => dispatch(prevStep())} className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-accent hover:bg-muted transition-colors border border-border">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
           Back
         </button>
         <button
-          onClick={nextStep}
+          onClick={() => dispatch(nextStep())}
           disabled={!canPublish}
           className={`flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold transition-all ${
             canPublish
