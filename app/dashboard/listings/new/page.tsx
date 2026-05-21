@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
-import { updateDraft } from "@/app/store/listingSlice";
+import { updateDraft, prevStep } from "@/app/store/listingSlice";
 import StepIndicator from "./components/StepIndicator";
 import ImageUploadStep from "./components/ImageUploadStep";
 import ProductDetailsStep from "./components/ProductDetailsStep";
@@ -11,8 +12,9 @@ import LocationStep from "./components/LocationStep";
 import PoliciesStep from "./components/PoliciesStep";
 import PreviewStep from "./components/PreviewStep";
 import PublishStep from "./components/PublishStep";
+import { useRouter } from "next/navigation";
 
-function StepContent({ step }: { step: number }) {
+function StepContent({ step, canPublish }: { step: number; canPublish: boolean }) {
   switch (step) {
     case 1: return <ImageUploadStep />;
     case 2: return <ProductDetailsStep />;
@@ -20,14 +22,40 @@ function StepContent({ step }: { step: number }) {
     case 4: return <LocationStep />;
     case 5: return <PoliciesStep />;
     case 6: return <PreviewStep />;
-    case 7: return <PublishStep />;
+    case 7: return <PublishStep canPublish={canPublish} />;
     default: return null;
   }
 }
 
 export default function NewListingPage() {
+  const router = useRouter();
+
   const dispatch = useAppDispatch();
+
+  const handlePageClick = (e) => {
+    // Prevent clicks on interactive elements from triggering navigation
+    if (e.target.closest('button, a, input, select, textarea')) return;
+    router.push('/dashboard/listings');
+  };
   const { currentStep, draft } = useAppSelector((s) => s.listing);
+
+  // Determine if required details are filled
+  const canPublish = Boolean(
+    draft.title &&
+    draft.category &&
+    typeof draft.pricePerDay === "number" &&
+    draft.pricePerDay > 0 &&
+    draft.address &&
+    draft.images && draft.images.length > 0
+  );
+
+  // Guard: if user navigates to Publish step without required details, redirect back
+  useEffect(() => {
+    if (currentStep === 7 && !canPublish) {
+      dispatch(prevStep());
+    }
+  }, [currentStep, canPublish, dispatch]);
+
 
   // Auto-save toast simulation
   const handleSaveDraft = () => {
@@ -37,7 +65,7 @@ export default function NewListingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-white font-sans" onClick={handlePageClick}>
       {/* ── Navbar ── */}
       <header className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">
         <div className="container mx-auto px-4 max-w-7xl">
@@ -90,11 +118,12 @@ export default function NewListingPage() {
         {/* Step Indicator */}
         <div className="mb-10">
           <StepIndicator />
+          {/* Pass validation flag to Publish step */}
         </div>
 
         {/* Step Content */}
         <div className="min-h-[500px]">
-          <StepContent step={currentStep} />
+          <StepContent step={currentStep} canPublish={canPublish} />
         </div>
       </main>
 

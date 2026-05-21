@@ -6,7 +6,7 @@ import { useState } from "react";
 
 type PublishOption = "now" | "schedule" | "approval" | "draft";
 
-export default function PublishStep() {
+export default function PublishStep({ canPublish }: { canPublish: boolean }) {
   const dispatch = useAppDispatch();
   const draft = useAppSelector((s) => s.listing.draft);
   const [selected, setSelected] = useState<PublishOption>("now");
@@ -93,7 +93,9 @@ export default function PublishStep() {
         <p className="text-muted-foreground text-sm mt-1">Choose how you'd like to publish your listing.</p>
       </div>
 
-      {/* Publish options */}
+      { !canPublish && (
+        <p className="text-sm text-red-500 mb-4">Please fill all required details before publishing.</p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl">
         {PUBLISH_OPTIONS.map((opt) => (
           <button
@@ -157,7 +159,7 @@ export default function PublishStep() {
         </button>
         <button
           onClick={handlePublish}
-          disabled={isPublishing || (selected === "schedule" && !draft.publishDate)}
+          disabled={isPublishing || (selected === "schedule" && !draft.publishDate) || !canPublish}
           className={`flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold transition-all ${
             isPublishing
               ? "bg-primary/70 text-white cursor-wait"
