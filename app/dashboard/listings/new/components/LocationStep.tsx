@@ -3,11 +3,31 @@
 import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
 import { updateDraft, nextStep, prevStep } from "@/app/store/listingSlice";
 
+function getEmbedUrl(address: string) {
+  if (!address || address.trim().length < 3) return null;
+  
+  let query = address.trim();
+  
+  // If it's a google maps place link, extract the place part
+  if (query.includes("google.com/maps/place/")) {
+    const parts = query.split("google.com/maps/place/");
+    if (parts[1]) {
+      const placePart = parts[1].split("/")[0] || "";
+      if (placePart) {
+        query = decodeURIComponent(placePart.split("@")[0].replace(/\+/g, " "));
+      }
+    }
+  }
+  
+  return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+}
+
 export default function LocationStep() {
   const dispatch = useAppDispatch();
   const draft = useAppSelector((s) => s.listing.draft);
 
   const canProceed = draft.address.trim().length > 3;
+  const embedUrl = getEmbedUrl(draft.address);
 
   return (
     <div className="space-y-6">
@@ -21,7 +41,7 @@ export default function LocationStep() {
         <div className="space-y-5">
           <div className="space-y-2">
             <label className="text-[10px] font-bold tracking-widest text-accent uppercase">
-              Address <span className="text-red-500">*</span>
+              Address or Google Maps Link <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -31,7 +51,7 @@ export default function LocationStep() {
                 type="text"
                 value={draft.address}
                 onChange={(e) => dispatch(updateDraft({ address: e.target.value }))}
-                placeholder="Search for address..."
+                placeholder="Enter address or paste Google Maps link..."
                 className="w-full bg-muted/50 border-none rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
               />
             </div>
@@ -48,16 +68,30 @@ export default function LocationStep() {
             />
           </div>
 
-          {/* Map placeholder */}
-          <div className="bg-muted rounded-2xl h-48 flex items-center justify-center border border-border">
-            <div className="text-center text-muted-foreground">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 opacity-40">
-                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" />
-              </svg>
-              <p className="text-xs font-semibold">Map Preview</p>
-              <p className="text-[10px]">Will appear when address is set</p>
+          {/* Map preview */}
+          {embedUrl ? (
+            <div className="bg-muted rounded-2xl overflow-hidden h-48 border border-border shadow-sm">
+              <iframe
+                title="Map Preview"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                loading="lazy"
+                allowFullScreen
+                src={embedUrl}
+              />
             </div>
-          </div>
+          ) : (
+            <div className="bg-muted rounded-2xl h-48 flex items-center justify-center border border-border">
+              <div className="text-center text-muted-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 opacity-40">
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" />
+                </svg>
+                <p className="text-xs font-semibold">Map Preview</p>
+                <p className="text-[10px]">Will appear when address or link is set</p>
+              </div>
+            </div>
+          )}
 
           {/* Privacy toggle */}
           <div className="flex items-center justify-between bg-muted/30 border border-border rounded-xl p-4">

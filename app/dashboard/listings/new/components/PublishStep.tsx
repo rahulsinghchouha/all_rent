@@ -4,7 +4,7 @@ import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
 import { updateDraft, prevStep, resetDraft } from "@/app/store/listingSlice";
 import { useState } from "react";
 
-type PublishOption = "now" | "schedule" | "approval" | "draft";
+type PublishOption = "now" | "schedule" | "draft";
 
 export default function PublishStep({ canPublish }: { canPublish: boolean }) {
   const dispatch = useAppDispatch();
@@ -16,7 +16,6 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
   const PUBLISH_OPTIONS: { value: PublishOption; icon: string; label: string; desc: string }[] = [
     { value: "now", icon: "🚀", label: "Publish Now", desc: "Your listing goes live immediately and appears in search results." },
     { value: "schedule", icon: "📅", label: "Schedule Publish", desc: "Choose a future date and time for your listing to go live." },
-    { value: "approval", icon: "✅", label: "Submit for Approval", desc: "Send to admin for review before publishing. Recommended for new owners." },
     { value: "draft", icon: "📝", label: "Save as Draft", desc: "Save and continue editing later from My Listings." },
   ];
 
@@ -29,7 +28,6 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
     const statusMap: Record<PublishOption, typeof draft.status> = {
       now: "published",
       schedule: "scheduled",
-      approval: "pending",
       draft: "draft",
     };
 
@@ -42,7 +40,6 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
     const statusMessages: Record<string, { icon: string; title: string; desc: string; color: string }> = {
       published: { icon: "🎉", title: "Listing Published!", desc: "Your listing is now live and visible to renters.", color: "text-green-600" },
       scheduled: { icon: "📅", title: "Listing Scheduled!", desc: `Your listing will go live on ${draft.publishDate || "the scheduled date"}.`, color: "text-blue-600" },
-      pending: { icon: "⏳", title: "Submitted for Approval", desc: "An admin will review your listing. You'll be notified once approved.", color: "text-yellow-600" },
       draft: { icon: "📝", title: "Draft Saved!", desc: "You can find and edit this listing in My Listings anytime.", color: "text-muted-foreground" },
     };
 
@@ -145,7 +142,6 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
               <span>💰 ${typeof draft.pricePerDay === "number" ? draft.pricePerDay : "—"}/day</span>
               <span>📷 {draft.images.length} photo{draft.images.length !== 1 ? "s" : ""}</span>
               <span>📍 {draft.address || "No address"}</span>
-              <span>📋 {draft.cancellationPolicy} policy</span>
             </div>
           </div>
         </div>
@@ -173,7 +169,7 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
             </>
           ) : (
             <>
-              {selected === "draft" ? "Save Draft" : selected === "schedule" ? "Schedule" : selected === "approval" ? "Submit for Approval" : "Publish Now"}
+              {selected === "draft" ? "Save Draft" : selected === "schedule" ? "Schedule" : "Publish Now"}
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
             </>
           )}

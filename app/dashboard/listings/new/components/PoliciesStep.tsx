@@ -1,42 +1,11 @@
 "use client";
 
 import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
-import { updateDraft, nextStep, prevStep, type AddOn } from "@/app/store/listingSlice";
-import { useState } from "react";
-
-const CANCELLATION_POLICIES = [
-  { value: "flexible", label: "Flexible", desc: "Full refund up to 24 hours before rental starts." },
-  { value: "moderate", label: "Moderate", desc: "Full refund up to 5 days before. 50% after that." },
-  { value: "strict", label: "Strict", desc: "50% refund up to 7 days before. No refund after." },
-  { value: "custom", label: "Custom", desc: "Write your own cancellation policy." },
-] as const;
+import { updateDraft, nextStep, prevStep } from "@/app/store/listingSlice";
 
 export default function PoliciesStep() {
   const dispatch = useAppDispatch();
   const draft = useAppSelector((s) => s.listing.draft);
-  const [addOnName, setAddOnName] = useState("");
-  const [addOnPrice, setAddOnPrice] = useState("");
-
-  function addAddOn() {
-    const name = addOnName.trim();
-    const price = Number(addOnPrice);
-    if (name && price >= 0) {
-      const newAddOn: AddOn = { id: `${Date.now()}`, name, price, enabled: true };
-      dispatch(updateDraft({ addOns: [...draft.addOns, newAddOn] }));
-      setAddOnName("");
-      setAddOnPrice("");
-    }
-  }
-
-  function removeAddOn(id: string) {
-    dispatch(updateDraft({ addOns: draft.addOns.filter((a) => a.id !== id) }));
-  }
-
-  function toggleAddOn(id: string) {
-    dispatch(updateDraft({
-      addOns: draft.addOns.map((a) => (a.id === id ? { ...a, enabled: !a.enabled } : a)),
-    }));
-  }
 
   return (
     <div className="space-y-6">
@@ -48,62 +17,6 @@ export default function PoliciesStep() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left — Policies */}
         <div className="space-y-6">
-          {/* Cancellation */}
-          <div className="space-y-3">
-            <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Cancellation Policy</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {CANCELLATION_POLICIES.map((p) => (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => dispatch(updateDraft({ cancellationPolicy: p.value }))}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
-                    draft.cancellationPolicy === p.value
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/30"
-                  }`}
-                >
-                  <p className="text-sm font-bold text-accent">{p.label}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{p.desc}</p>
-                </button>
-              ))}
-            </div>
-
-            {draft.cancellationPolicy === "custom" && (
-              <textarea
-                value={draft.customCancellationText}
-                onChange={(e) => dispatch(updateDraft({ customCancellationText: e.target.value }))}
-                placeholder="Describe your custom cancellation policy..."
-                rows={3}
-                className="w-full bg-muted/50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none placeholder:text-muted-foreground/60"
-              />
-            )}
-          </div>
-
-          {/* Deposit */}
-          <div className="space-y-3">
-            <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Deposit Charge Type</label>
-            <div className="flex gap-2">
-              {(["hold", "immediate"] as const).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => dispatch(updateDraft({ depositChargeType: type }))}
-                  className={`flex-1 p-3 rounded-xl border-2 text-center transition-all ${
-                    draft.depositChargeType === type
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-border text-muted-foreground hover:border-primary/30"
-                  }`}
-                >
-                  <p className="text-xs font-bold capitalize">{type === "hold" ? "Hold Only" : "Charge Immediately"}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {type === "hold" ? "Auth hold, refunded after rental" : "Charged upfront, refunded per policy"}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Usage Rules */}
           <div className="space-y-2">
             <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Usage Rules</label>
@@ -111,13 +24,13 @@ export default function PoliciesStep() {
               value={draft.usageRules}
               onChange={(e) => dispatch(updateDraft({ usageRules: e.target.value }))}
               placeholder="e.g. No smoking, handle with care, return cleaned..."
-              rows={3}
+              rows={6}
               className="w-full bg-muted/50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none placeholder:text-muted-foreground/60"
             />
           </div>
         </div>
 
-        {/* Right — Trust & Add-ons */}
+        {/* Right — Trust */}
         <div className="space-y-6">
           {/* Trust & Safety */}
           <div className="bg-muted/30 border border-border rounded-2xl p-5 space-y-4">
@@ -145,65 +58,6 @@ export default function PoliciesStep() {
                 </button>
               </div>
             ))}
-          </div>
-
-          {/* Add-ons */}
-          <div className="bg-muted/30 border border-border rounded-2xl p-5 space-y-4">
-            <h3 className="font-bold text-accent font-heading text-sm flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
-              Fees & Add-ons
-            </h3>
-
-            {/* Existing add-ons */}
-            {draft.addOns.length > 0 && (
-              <div className="space-y-2">
-                {draft.addOns.map((addon) => (
-                  <div key={addon.id} className="flex items-center justify-between bg-white rounded-xl p-3 border border-border">
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => toggleAddOn(addon.id)} className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${addon.enabled ? "bg-primary border-primary" : "border-border"}`}>
-                        {addon.enabled && (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                        )}
-                      </button>
-                      <span className={`text-sm font-semibold ${addon.enabled ? "text-accent" : "text-muted-foreground line-through"}`}>{addon.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-accent">${addon.price}</span>
-                      <button onClick={() => removeAddOn(addon.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Add new */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={addOnName}
-                onChange={(e) => setAddOnName(e.target.value)}
-                placeholder="e.g. Cleaning fee"
-                className="flex-1 bg-white border-none rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none placeholder:text-muted-foreground/60"
-              />
-              <div className="relative w-24">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-semibold">$</span>
-                <input
-                  type="number"
-                  value={addOnPrice}
-                  onChange={(e) => setAddOnPrice(e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  className="w-full bg-white border-none rounded-xl pl-7 pr-2 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                />
-              </div>
-              <button onClick={addAddOn} className="px-3 py-2.5 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent/80 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
-              </button>
-            </div>
-
-            <p className="text-[10px] text-muted-foreground">Add optional fees like cleaning, insurance, setup, or extra accessories.</p>
           </div>
         </div>
       </div>

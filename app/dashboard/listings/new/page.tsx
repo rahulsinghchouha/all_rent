@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
-import { updateDraft, prevStep } from "@/app/store/listingSlice";
+import { updateDraft } from "@/app/store/listingSlice";
 import StepIndicator from "./components/StepIndicator";
 import ImageUploadStep from "./components/ImageUploadStep";
 import ProductDetailsStep from "./components/ProductDetailsStep";
@@ -12,7 +11,6 @@ import LocationStep from "./components/LocationStep";
 import PoliciesStep from "./components/PoliciesStep";
 import PreviewStep from "./components/PreviewStep";
 import PublishStep from "./components/PublishStep";
-import { useRouter } from "next/navigation";
 
 function StepContent({ step, canPublish }: { step: number; canPublish: boolean }) {
   switch (step) {
@@ -28,15 +26,8 @@ function StepContent({ step, canPublish }: { step: number; canPublish: boolean }
 }
 
 export default function NewListingPage() {
-  const router = useRouter();
-
   const dispatch = useAppDispatch();
 
-  const handlePageClick = (e) => {
-    // Prevent clicks on interactive elements from triggering navigation
-    if (e.target.closest('button, a, input, select, textarea')) return;
-    router.push('/dashboard/listings');
-  };
   const { currentStep, draft } = useAppSelector((s) => s.listing);
 
   // Determine if required details are filled
@@ -49,12 +40,8 @@ export default function NewListingPage() {
     draft.images && draft.images.length > 0
   );
 
-  // Guard: if user navigates to Publish step without required details, redirect back
-  useEffect(() => {
-    if (currentStep === 7 && !canPublish) {
-      dispatch(prevStep());
-    }
-  }, [currentStep, canPublish, dispatch]);
+  // Note: navigation is free across all steps.
+  // The Publish button in step 7 is disabled when canPublish is false.
 
 
   // Auto-save toast simulation
@@ -65,7 +52,7 @@ export default function NewListingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-sans" onClick={handlePageClick}>
+    <div className="min-h-screen bg-white font-sans">
       {/* ── Navbar ── */}
       <header className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">
         <div className="container mx-auto px-4 max-w-7xl">
@@ -117,7 +104,7 @@ export default function NewListingPage() {
       <main className="container mx-auto px-4 max-w-5xl py-8">
         {/* Step Indicator */}
         <div className="mb-10">
-          <StepIndicator />
+          <StepIndicator canPublish={canPublish} />
           {/* Pass validation flag to Publish step */}
         </div>
 
