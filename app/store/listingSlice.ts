@@ -38,8 +38,8 @@ export interface ListingDraft {
   deposit: number | "";
   depositEnabled: boolean;
   hourlyRate: number | "";
-  weekendRate: number | "";
-  weeklyDiscount: number | "";
+  // weekendRate removed
+  // weeklyDiscount removed
   minRentalDays: number | "";
   pricingRules: PricingRule[];
 
@@ -52,13 +52,14 @@ export interface ListingDraft {
 
   // Step 4 — Location & Delivery
   address: string;
+  googleMapsAddress?: string;
   city: string;
   deliveryOption: "pickup" | "delivery" | "both";
   deliveryRadius: number | "";
   deliveryFee: number | "";
   estimatedDeliveryTime: string;
   pickupInstructions: string;
-  hideExactAddress: boolean;
+  
 
   // Step 5 — Policies
   cancellationPolicy: "flexible" | "moderate" | "strict" | "custom";
@@ -88,8 +89,8 @@ const initialDraft: ListingDraft = {
   deposit: "",
   depositEnabled: false,
   hourlyRate: "",
-  weekendRate: "",
-  weeklyDiscount: "",
+  // weekendRate removed
+  // weeklyDiscount removed
   minRentalDays: "",
   pricingRules: [],
   availableRanges: [],
@@ -98,13 +99,14 @@ const initialDraft: ListingDraft = {
   maxConcurrent: 1,
   bufferDays: 0,
   address: "",
+  googleMapsAddress: "",
   city: "",
   deliveryOption: "pickup",
   deliveryRadius: "",
   deliveryFee: "",
   estimatedDeliveryTime: "",
   pickupInstructions: "",
-  hideExactAddress: false,
+  
   cancellationPolicy: "flexible",
   customCancellationText: "",
   depositChargeType: "hold",

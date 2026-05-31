@@ -12,6 +12,7 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
   const [selected, setSelected] = useState<PublishOption>("now");
   const [isPublishing, setIsPublishing] = useState(false);
   const [published, setPublished] = useState(false);
+  const [serverError, setServerError] = useState<string>("");
 
   const PUBLISH_OPTIONS: { value: PublishOption; icon: string; label: string; desc: string }[] = [
     { value: "now", icon: "🚀", label: "Publish Now", desc: "Your listing goes live immediately and appears in search results." },
@@ -21,9 +22,7 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
 
   async function handlePublish() {
     setIsPublishing(true);
-
-    // Simulate publish action (frontend only)
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    setServerError("");
 
     const statusMap: Record<PublishOption, typeof draft.status> = {
       now: "published",
@@ -31,9 +30,67 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
       draft: "draft",
     };
 
-    dispatch(updateDraft({ status: statusMap[selected] }));
-    setIsPublishing(false);
-    setPublished(true);
+    const coverImage = draft.images.find((img) => img.isCover)?.preview ?? draft.images[0]?.preview ?? "";
+
+    const productPayload = {
+      title: draft.title,
+      category: draft.category,
+      pricePerDay: Number(draft.pricePerDay),
+      description: draft.description,
+      condition: draft.condition,
+      tags: draft.tags,
+      deposit: typeof draft.deposit === "number" ? draft.deposit : undefined,
+      depositEnabled: draft.depositEnabled,
+      hourlyRate: typeof draft.hourlyRate === "number" ? draft.hourlyRate : undefined,
+      minRentalDays: typeof draft.minRentalDays === "number" ? draft.minRentalDays : undefined,
+      pricingRules: draft.pricingRules,
+      availableRanges: draft.availableRanges,
+      blockedDates: draft.blockedDates,
+      quantity: draft.quantity,
+      maxConcurrent: draft.maxConcurrent,
+      bufferDays: draft.bufferDays,
+      address: draft.address,
+      googleMapsAddress: draft.googleMapsAddress,
+      city: draft.city,
+      deliveryOption: draft.deliveryOption,
+      deliveryRadius: typeof draft.deliveryRadius === "number" ? draft.deliveryRadius : undefined,
+      deliveryFee: typeof draft.deliveryFee === "number" ? draft.deliveryFee : undefined,
+      estimatedDeliveryTime: draft.estimatedDeliveryTime,
+      pickupInstructions: draft.pickupInstructions,
+      cancellationPolicy: draft.cancellationPolicy,
+      customCancellationText: draft.customCancellationText,
+      depositChargeType: draft.depositChargeType,
+      requireIdVerification: draft.requireIdVerification,
+      requireSecurityDeposit: draft.requireSecurityDeposit,
+      requireRenterReviews: draft.requireRenterReviews,
+      usageRules: draft.usageRules,
+      addOns: draft.addOns,
+      status: statusMap[selected],
+      publishDate: selected === "schedule" ? draft.publishDate || undefined : undefined,
+      imageUrl: coverImage,
+    };
+
+    try {
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(productPayload),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        setServerError(result?.error || "Could not save listing.");
+        setIsPublishing(false);
+        return;
+      }
+
+      dispatch(updateDraft({ status: statusMap[selected] }));
+      setPublished(true);
+    } catch (error: any) {
+      setServerError(error?.message || "Failed to save listing.");
+    } finally {
+      setIsPublishing(false);
+    }
   }
 
   if (published) {
@@ -123,6 +180,12 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
             min={new Date().toISOString().slice(0, 16)}
             className="w-full bg-muted/50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
           />
+        </div>
+      )}
+
+      {serverError && (
+        <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
+          {serverError}
         </div>
       )}
 
