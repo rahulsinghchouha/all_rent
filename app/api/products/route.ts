@@ -1,5 +1,32 @@
 import { NextResponse } from "next/server";
-import { createProductService } from "@/app/services/products";
+import { createProductService, getProductsService } from "@/app/services/products";
+
+export async function GET(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const status = url.searchParams.get("status") ?? "published";
+    const ownerId = url.searchParams.get("ownerId") ?? undefined;
+    const category = url.searchParams.get("category") ?? undefined;
+    const limitParam = url.searchParams.get("limit");
+    const limit = limitParam ? Number(limitParam) : 50;
+
+    if (limitParam && (Number.isNaN(limit) || limit <= 0)) {
+      return NextResponse.json({ error: "Invalid limit" }, { status: 400 });
+    }
+
+    const products = await getProductsService({
+      status,
+      ownerId: ownerId || undefined,
+      category: category || undefined,
+      limit,
+    });
+
+    return NextResponse.json({ data: products }, { status: 200 });
+  } catch (error) {
+    console.error("🔴 PRODUCT LIST ERROR:", error);
+    return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
+  }
+}
 
 export async function POST(req: Request) {
   try {

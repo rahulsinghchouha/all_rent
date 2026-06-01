@@ -45,7 +45,6 @@ export interface ListingDraft {
 
   // Step 3 — Availability
   availableRanges: { start: string; end: string }[];
-  blockedDates: string[];
   quantity: number;
   maxConcurrent: number;
   bufferDays: number;
@@ -94,7 +93,6 @@ const initialDraft: ListingDraft = {
   minRentalDays: "",
   pricingRules: [],
   availableRanges: [],
-  blockedDates: [],
   quantity: 1,
   maxConcurrent: 1,
   bufferDays: 0,

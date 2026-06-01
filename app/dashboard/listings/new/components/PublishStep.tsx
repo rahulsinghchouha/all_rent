@@ -30,8 +30,6 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
       draft: "draft",
     };
 
-    const coverImage = draft.images.find((img) => img.isCover)?.preview ?? draft.images[0]?.preview ?? "";
-
     const productPayload = {
       title: draft.title,
       category: draft.category,
@@ -45,7 +43,6 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
       minRentalDays: typeof draft.minRentalDays === "number" ? draft.minRentalDays : undefined,
       pricingRules: draft.pricingRules,
       availableRanges: draft.availableRanges,
-      blockedDates: draft.blockedDates,
       quantity: draft.quantity,
       maxConcurrent: draft.maxConcurrent,
       bufferDays: draft.bufferDays,
@@ -67,7 +64,7 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
       addOns: draft.addOns,
       status: statusMap[selected],
       publishDate: selected === "schedule" ? draft.publishDate || undefined : undefined,
-      imageUrl: coverImage,
+      imageUrls: draft.images.map((img) => img.preview),
     };
 
     try {
@@ -86,8 +83,12 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
 
       dispatch(updateDraft({ status: statusMap[selected] }));
       setPublished(true);
-    } catch (error: any) {
-      setServerError(error?.message || "Failed to save listing.");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setServerError(error.message || "Failed to save listing.");
+      } else {
+        setServerError("Failed to save listing.");
+      }
     } finally {
       setIsPublishing(false);
     }
@@ -103,7 +104,7 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
     const msg = statusMessages[draft.status] || statusMessages.draft;
 
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <div className="text-center max-w-md mx-auto space-y-6">
           <div className="text-6xl mb-4">{msg.icon}</div>
           <h2 className={`text-3xl font-bold font-heading ${msg.color}`}>{msg.title}</h2>
@@ -113,6 +114,7 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
             <div className="flex items-center gap-3">
               {draft.images[0] && (
                 <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={draft.images[0].preview} alt="" className="w-full h-full object-cover" />
                 </div>
               )}
@@ -144,12 +146,11 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-accent font-heading">Publish Your Listing</h2>
-        <p className="text-muted-foreground text-sm mt-1">Choose how you'd like to publish your listing.</p>
+        <p className="text-muted-foreground text-sm mt-1">Choose how you want to publish your listing.</p>
       </div>
-
       { !canPublish && (
         <p className="text-sm text-red-500 mb-4">Please fill all required details before publishing.</p>
-      )}
+      ) }
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl">
         {PUBLISH_OPTIONS.map((opt) => (
           <button
@@ -195,6 +196,7 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
         <div className="flex items-start gap-4">
           {draft.images[0] && (
             <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={draft.images[0].preview} alt="" className="w-full h-full object-cover" />
             </div>
           )}
