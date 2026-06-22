@@ -30,6 +30,10 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
       draft: "draft",
     };
 
+    // Images are already uploaded to MinIO by ImageUploadStep
+    // Just use the preview URLs (which are MinIO URLs)
+    const imageUrls = draft.images.map((img) => img.preview);
+
     const productPayload = {
       title: draft.title,
       category: draft.category,
@@ -64,7 +68,7 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
       addOns: draft.addOns,
       status: statusMap[selected],
       publishDate: selected === "schedule" ? draft.publishDate || undefined : undefined,
-      imageUrls: draft.images.map((img) => img.preview),
+      imageUrls,
     };
 
     try {

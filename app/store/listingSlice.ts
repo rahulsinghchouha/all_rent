@@ -7,6 +7,7 @@ export interface ImageFile {
   file?: File;
   preview: string;
   isCover: boolean;
+  minioUrl?: string;
 }
 
 export interface PricingRule {
