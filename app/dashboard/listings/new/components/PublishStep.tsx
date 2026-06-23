@@ -20,6 +20,28 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
     { value: "draft", icon: "📝", label: "Save as Draft", desc: "Save and continue editing later from My Listings." },
   ];
 
+  async function uploadImages(): Promise<string[]> {
+    const files = draft.images.filter((img) => img.file);
+    if (!files.length) return [];
+
+    const formData = new FormData();
+    files.forEach((img) => {
+      formData.append("images", img.file as File, img.file.name || img.id);
+    });
+
+    const response = await fetch("/api/uploads", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result?.error || "Image upload failed.");
+    }
+
+    return result.data.map((item: { url: string }) => item.url);
+  }
+
   async function handlePublish() {
     setIsPublishing(true);
     setServerError("");
@@ -30,9 +52,22 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
       draft: "draft",
     };
 
-    // Images are already uploaded to MinIO by ImageUploadStep
-    // Just use the preview URLs (which are MinIO URLs)
-    const imageUrls = draft.images.map((img) => img.preview);
+    const uploadedUrls = await uploadImages();
+    const localImageMap = new Map(
+      draft.images
+        .filter((img) => img.file)
+        .map((img, index) => [img.id, uploadedUrls[index]])
+    );
+
+    const imageUrls = draft.images.map((img) => {
+      if (img.file) {
+        return localImageMap.get(img.id) ?? img.preview;
+      }
+      if (img.preview.startsWith("blob:")) {
+        throw new Error("Unable to publish image: missing upload data for a local image.");
+      }
+      return img.preview;
+    });
 
     const productPayload = {
       title: draft.title,

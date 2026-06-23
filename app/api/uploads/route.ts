@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { Readable } from "node:stream";
 import { randomUUID } from "crypto";
 import minioClient, { ensureBucketExists, MINIO_BUCKET, MINIO_PUBLIC_URL } from "@/app/utils/minIo";
 
@@ -21,9 +20,9 @@ export async function POST(req: Request) {
     const uploads = await Promise.all(
       files.map(async (file) => {
         const objectName = `${Date.now()}-${randomUUID()}-${file.name}`.replace(/\s+/g, "-");
-        const stream = Readable.fromWeb(file.stream());
+        const buffer = await file.arrayBuffer();
 
-        await minioClient.putObject(MINIO_BUCKET, objectName, stream, file.size, {
+        await minioClient.putObject(MINIO_BUCKET, objectName, Buffer.from(buffer), file.size, {
           "Content-Type": file.type,
         });
 

@@ -7,12 +7,12 @@ services:
     environment:
       - NODE_ENV=development
       - DEFAULT_OWNER_ID=${DEFAULT_OWNER_ID}
-      - MINIO_ENDPOINT=minio
+      - MINIO_ENDPOINT=localhost
       - MINIO_PORT=9000
       - MINIO_USE_SSL=false
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
-      - MINIO_BUCKET=rents-images
+      - MINIO_BUCKET=rental-images
       - MINIO_PUBLIC_URL=http://localhost:9000
     volumes:
       - ./:/app:cached
