@@ -3,11 +3,31 @@
 import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
 import { updateDraft, nextStep, prevStep } from "@/app/store/listingSlice";
 
+function getEmbedUrl(address: string) {
+  if (!address || address.trim().length < 3) return null;
+  
+  let query = address.trim();
+  
+  // If it's a google maps place link, extract the place part
+  if (query.includes("google.com/maps/place/")) {
+    const parts = query.split("google.com/maps/place/");
+    if (parts[1]) {
+      const placePart = parts[1].split("/")[0] || "";
+      if (placePart) {
+        query = decodeURIComponent(placePart.split("@")[0].replace(/\+/g, " "));
+      }
+    }
+  }
+  
+  return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+}
+
 export default function LocationStep() {
   const dispatch = useAppDispatch();
   const draft = useAppSelector((s) => s.listing.draft);
 
   const canProceed = draft.address.trim().length > 3;
+  const embedUrl = getEmbedUrl(draft.googleMapsAddress || draft.address);
 
   return (
     <div className="space-y-6">
@@ -31,7 +51,7 @@ export default function LocationStep() {
                 type="text"
                 value={draft.address}
                 onChange={(e) => dispatch(updateDraft({ address: e.target.value }))}
-                placeholder="Search for address..."
+                placeholder="Enter address..."
                 className="w-full bg-muted/50 border-none rounded-xl pl-11 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
               />
             </div>
@@ -48,31 +68,44 @@ export default function LocationStep() {
             />
           </div>
 
-          {/* Map placeholder */}
-          <div className="bg-muted rounded-2xl h-48 flex items-center justify-center border border-border">
-            <div className="text-center text-muted-foreground">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 opacity-40">
-                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" />
-              </svg>
-              <p className="text-xs font-semibold">Map Preview</p>
-              <p className="text-[10px]">Will appear when address is set</p>
-            </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Google Maps Address (optional)</label>
+            <input
+              type="text"
+              value={draft.googleMapsAddress || ""}
+              onChange={(e) => dispatch(updateDraft({ googleMapsAddress: e.target.value }))}
+              placeholder="Optional: Google Maps address (not full URL)"
+              className="w-full bg-muted/50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60"
+            />
+            <p className="text-[10px] text-muted-foreground">Prefer entering an address (not a full URL); links will be parsed if pasted.</p>
           </div>
 
-          {/* Privacy toggle */}
-          <div className="flex items-center justify-between bg-muted/30 border border-border rounded-xl p-4">
-            <div>
-              <p className="text-xs font-bold text-accent">Hide Exact Address</p>
-              <p className="text-[10px] text-muted-foreground">Show approximate area until booking is confirmed</p>
+          {/* Map preview */}
+          {embedUrl ? (
+            <div className="bg-muted rounded-2xl overflow-hidden h-48 border border-border shadow-sm">
+              <iframe
+                title="Map Preview"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                loading="lazy"
+                allowFullScreen
+                src={embedUrl}
+              />
             </div>
-            <button
-              type="button"
-              onClick={() => dispatch(updateDraft({ hideExactAddress: !draft.hideExactAddress }))}
-              className={`w-10 h-6 rounded-full transition-all ${draft.hideExactAddress ? "bg-primary" : "bg-border"}`}
-            >
-              <div className={`w-4 h-4 bg-white rounded-full shadow transition-all ${draft.hideExactAddress ? "translate-x-5" : "translate-x-1"}`} />
-            </button>
-          </div>
+          ) : (
+            <div className="bg-muted rounded-2xl h-48 flex items-center justify-center border border-border">
+              <div className="text-center text-muted-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2 opacity-40">
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" />
+                </svg>
+                <p className="text-xs font-semibold">Map Preview</p>
+                <p className="text-[10px]">Will appear when address or link is set</p>
+              </div>
+            </div>
+          )}
+
+          {/* Privacy toggle removed */}
         </div>
 
         {/* Delivery Options */}

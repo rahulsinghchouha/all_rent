@@ -40,13 +40,7 @@ export default function AvailabilityStep() {
     return set;
   }, [draft.availableRanges]);
 
-  const blockedSet = useMemo(() => new Set(draft.blockedDates), [draft.blockedDates]);
-
   function toggleDate(dateStr: string) {
-    if (blockedSet.has(dateStr)) {
-      dispatch(updateDraft({ blockedDates: draft.blockedDates.filter((d) => d !== dateStr) }));
-      return;
-    }
 
     if (selectedDates.has(dateStr)) {
       const newRanges = draft.availableRanges.filter(({ start, end }) => {
@@ -70,20 +64,6 @@ export default function AvailabilityStep() {
     }
   }
 
-  function blockDate(dateStr: string) {
-    if (blockedSet.has(dateStr)) {
-      dispatch(updateDraft({ blockedDates: draft.blockedDates.filter((d) => d !== dateStr) }));
-    } else {
-      dispatch(updateDraft({ blockedDates: [...draft.blockedDates, dateStr] }));
-      const newRanges = draft.availableRanges.filter(({ start, end }) => {
-        const s = new Date(start);
-        const e = new Date(end);
-        const d = new Date(dateStr);
-        return d < s || d > e;
-      });
-      dispatch(updateDraft({ availableRanges: newRanges }));
-    }
-  }
 
   function prevMonth() {
     if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); }
@@ -101,7 +81,7 @@ export default function AvailabilityStep() {
       const date = new Date(viewYear, viewMonth, d);
       const day = date.getDay();
       const dateStr = toDateStr(viewYear, viewMonth, d);
-      if (day >= 1 && day <= 5 && !selectedDates.has(dateStr) && !blockedSet.has(dateStr)) {
+      if (day >= 1 && day <= 5 && !selectedDates.has(dateStr)) {
         newRanges.push({ start: dateStr, end: dateStr });
       }
     }
@@ -112,7 +92,6 @@ export default function AvailabilityStep() {
     const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
     dispatch(updateDraft({
       availableRanges: draft.availableRanges.filter(({ start }) => !start.startsWith(monthPrefix)),
-      blockedDates: draft.blockedDates.filter((d) => !d.startsWith(monthPrefix)),
     }));
   }
 
@@ -122,28 +101,28 @@ export default function AvailabilityStep() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-accent font-heading">Availability</h2>
-        <p className="text-muted-foreground text-sm mt-1">Set when your item is available for rent. Click dates to select, right-click to block.</p>
+        <p className="text-muted-foreground text-sm mt-1">Set when your item is available for rent. Click dates to select available days; unselected dates remain unavailable.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Calendar */}
         <div className="lg:col-span-2">
-          <div className="bg-white border border-border rounded-2xl p-5">
+          <div className="bg-white border border-border rounded-2xl p-4 max-w-sm mx-auto lg:mx-0">
             {/* Month nav */}
-            <div className="flex items-center justify-between mb-4">
-              <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-muted transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+            <div className="flex items-center justify-between mb-3">
+              <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
               </button>
-              <h3 className="font-bold text-accent font-heading">{MONTHS[viewMonth]} {viewYear}</h3>
-              <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-muted transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+              <h3 className="font-bold text-accent font-heading text-sm">{MONTHS[viewMonth]} {viewYear}</h3>
+              <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
               </button>
             </div>
 
             {/* Day headers */}
-            <div className="grid grid-cols-7 gap-1 mb-2">
+            <div className="grid grid-cols-7 gap-1 mb-1">
               {DAYS.map((d) => (
-                <div key={d} className="text-center text-[10px] font-bold text-muted-foreground uppercase tracking-wider py-2">{d}</div>
+                <div key={d} className="text-center text-[9px] font-bold text-muted-foreground uppercase tracking-wider py-1">{d}</div>
               ))}
             </div>
 
@@ -155,7 +134,6 @@ export default function AvailabilityStep() {
                 const dateStr = toDateStr(viewYear, viewMonth, day);
                 const isPast = dateStr < todayStr;
                 const isSelected = selectedDates.has(dateStr);
-                const isBlocked = blockedSet.has(dateStr);
                 const isSelecting = selecting === dateStr;
 
                 return (
@@ -163,10 +141,8 @@ export default function AvailabilityStep() {
                     key={day}
                     disabled={isPast}
                     onClick={() => toggleDate(dateStr)}
-                    onContextMenu={(e) => { e.preventDefault(); blockDate(dateStr); }}
-                    className={`aspect-square rounded-xl text-sm font-semibold transition-all ${
+                    className={`h-9 w-9 rounded-xl text-xs font-semibold flex items-center justify-center mx-auto transition-all ${
                       isPast ? "text-muted-foreground/30 cursor-not-allowed"
-                      : isBlocked ? "bg-destructive/10 text-destructive border border-destructive/20 line-through"
                       : isSelected ? "bg-primary text-white shadow-sm"
                       : isSelecting ? "bg-primary/30 text-primary ring-2 ring-primary"
                       : "hover:bg-muted text-accent"
@@ -179,16 +155,15 @@ export default function AvailabilityStep() {
             </div>
 
             {/* Quick actions */}
-            <div className="flex gap-2 mt-4 pt-4 border-t border-border">
+            <div className="flex gap-2 mt-3 pt-3 border-t border-border">
               <button onClick={selectAllWeekdays} className="text-xs font-semibold text-primary hover:underline">Select Weekdays</button>
               <span className="text-border">|</span>
               <button onClick={clearMonth} className="text-xs font-semibold text-destructive hover:underline">Clear Month</button>
             </div>
 
             {/* Legend */}
-            <div className="flex gap-4 mt-3 text-[10px] text-muted-foreground">
+            <div className="flex gap-4 mt-2.5 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-primary" /> Available</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-destructive/20 border border-destructive/30" /> Blocked</span>
             </div>
           </div>
         </div>
@@ -204,21 +179,11 @@ export default function AvailabilityStep() {
               <p className="text-[10px] text-muted-foreground">Number of identical items.</p>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Max Concurrent Bookings</label>
-              <input type="number" value={draft.maxConcurrent} onChange={(e) => dispatch(updateDraft({ maxConcurrent: Math.max(1, Number(e.target.value)) }))} min="1" className="w-full bg-white border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Buffer Days Between Bookings</label>
-              <input type="number" value={draft.bufferDays} onChange={(e) => dispatch(updateDraft({ bufferDays: Math.max(0, Number(e.target.value)) }))} min="0" className="w-full bg-white border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
-              <p className="text-[10px] text-muted-foreground">Rest days after each rental for cleaning / maintenance.</p>
-            </div>
           </div>
 
           <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-2">
             <p className="text-xs font-bold text-primary">💡 Tip</p>
-            <p className="text-xs text-muted-foreground">Click to mark dates available. Right-click to block dates for maintenance. Use quick actions below the calendar for bulk operations.</p>
+            <p className="text-xs text-muted-foreground">Click to mark dates available. Use quick actions below the calendar for bulk operations.</p>
           </div>
         </div>
       </div>

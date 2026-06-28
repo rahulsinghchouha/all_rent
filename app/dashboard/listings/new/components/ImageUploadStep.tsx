@@ -14,6 +14,8 @@ export default function ImageUploadStep() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
   function validateFile(file: File): string | null {
     if (!ALLOWED_TYPES.includes(file.type)) return `${file.name}: Only JPG, PNG, WebP allowed.`;
@@ -21,7 +23,49 @@ export default function ImageUploadStep() {
     return null;
   }
 
-  function addFiles(files: FileList | File[]) {
+  async function uploadFilesToMinIO(files: File[]) {
+    setUploading(true);
+    setErrors([]);
+    
+    try {
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      const response = await fetch("/api/uploads", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        setErrors([result.error || "Upload failed."]);
+        setUploading(false);
+        return;
+      }
+
+      const result = await response.json();
+      const uploadedUrls = result.data;
+
+      const newImages: ImageFile[] = uploadedUrls.map((upload: any, i: number) => ({
+        id: `${Date.now()}-${i}`,
+        file: undefined,
+        preview: upload.url,
+        isCover: draft.images.length === 0 && i === 0,
+        minioUrl: upload.url,
+      }));
+
+      dispatch(updateDraft({ images: [...draft.images, ...newImages] }));
+      setUploadProgress({});
+    } catch (error: any) {
+      setErrors([error?.message || "Upload failed."]);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function addFiles(files: FileList | File[]) {
     const fileArr = Array.from(files);
     const remaining = MAX_IMAGES - draft.images.length;
     if (remaining <= 0) {
@@ -37,15 +81,10 @@ export default function ImageUploadStep() {
       else validFiles.push(f);
     });
 
-    const newImages: ImageFile[] = validFiles.map((f, i) => ({
-      id: `${Date.now()}-${i}`,
-      file: f,
-      preview: URL.createObjectURL(f),
-      isCover: draft.images.length === 0 && i === 0,
-    }));
-
     setErrors(newErrors);
-    dispatch(updateDraft({ images: [...draft.images, ...newImages] }));
+    if (validFiles.length > 0) {
+      await uploadFilesToMinIO(validFiles);
+    }
   }
 
   function removeImage(id: string) {
@@ -68,7 +107,7 @@ export default function ImageUploadStep() {
     if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
   }
 
-  const canProceed = draft.images.length >= 1;
+  const canProceed = draft.images.length >= 1 && !uploading;
 
   return (
     <div className="space-y-6">
@@ -84,9 +123,11 @@ export default function ImageUploadStep() {
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => !uploading && fileInputRef.current?.click()}
         className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${
-          dragOver
+          uploading ? "opacity-50 cursor-not-allowed" : ""
+        } ${
+          dragOver && !uploading
             ? "border-primary bg-primary/5 scale-[1.01]"
             : "border-border hover:border-primary/40 hover:bg-muted/30"
         }`}
@@ -96,20 +137,33 @@ export default function ImageUploadStep() {
           type="file"
           accept={ALLOWED_TYPES.join(",")}
           multiple
+          disabled={uploading}
           className="hidden"
           onChange={(e) => e.target.files && addFiles(e.target.files)}
         />
         <div className="flex flex-col items-center gap-3">
           <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
+            {uploading ? (
+              <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 4v6h-6" />
+                <path d="M1 20v-6h6" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36M20.49 15a9 9 0 0 1-14.85 3.36" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            )}
           </div>
           <div>
             <p className="font-semibold text-accent">
-              Drag & drop images here, or <span className="text-primary">browse</span>
+              {uploading ? "Uploading..." : (
+                <>
+                  Drag & drop images here, or <span className="text-primary">browse</span>
+                </>
+              )}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               JPG, PNG, WebP · Max {MAX_SIZE_MB}MB each · Up to {MAX_IMAGES} images

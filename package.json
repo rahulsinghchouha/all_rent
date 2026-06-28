@@ -19,6 +19,7 @@
     "drizzle-orm": "^0.45.1",
     "drizzle-zod": "^0.8.3",
     "jsonwebtoken": "^9.0.3",
+    "minio": "^8.0.7",
     "next": "16.2.1",
     "postgres": "^3.4.8",
     "react": "19.2.4",

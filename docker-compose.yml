@@ -1,0 +1,53 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DEFAULT_OWNER_ID=${DEFAULT_OWNER_ID}
+      - MINIO_ENDPOINT=localhost
+      - MINIO_PORT=9000
+      - MINIO_USE_SSL=false
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET=rental-images
+      - MINIO_PUBLIC_URL=http://localhost:9000
+    volumes:
+      - ./:/app:cached
+    depends_on:
+      - db
+      - minio
+  
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rents_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - rents_db_data:/var/lib/postgresql/data
+  
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: minio server /data --console-address ":9001"
+    volumes:
+      - rents_minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  rents_db_data:
+  rents_minio_data:

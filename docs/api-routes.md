@@ -66,7 +66,49 @@ Registers a new user account.
 Authenticates an existing user and returns a JWT.
 
 ---
+## Products Routes — `/api/products`
 
+### `GET /api/products`
+
+**File:** `app/api/products/route.ts`
+
+Returns a list of products.
+
+#### Query Parameters
+
+- `status` — optional, defaults to `published`
+- `ownerId` — optional owner filter
+- `category` — optional category filter
+- `limit` — optional maximum number of results (default `50`)
+
+#### Responses
+
+| Status | Body | When |
+|--------|------|------|
+| `200` | `{ data: [ ...products ] }` | Success |
+| `400` | `{ error: "Invalid limit" }` | Invalid query param |
+| `500` | `{ error: "Failed to fetch products" }` | Server error |
+
+### `POST /api/products`
+
+**File:** `app/api/products/route.ts`
+
+Creates a new product listing.
+
+#### Request Body
+
+The request body must match the product insert schema in `app/tablesValidation/productsValidation.ts`.
+
+#### Responses
+
+| Status | Body | When |
+|--------|------|------|
+| `201` | `{ data: { ...product } }` | Created successfully |
+| `400` | `{ error: "Validation failed: ..." }` | Invalid payload |
+| `422` | `{ error: "No product owner configured..." }` | Owner lookup failed |
+| `500` | `{ error: "Failed to create product" }` | Server error |
+
+---
 ## Users Routes — `/api/users`
 
 _(planned)_

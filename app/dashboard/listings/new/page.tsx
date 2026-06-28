@@ -12,7 +12,7 @@ import PoliciesStep from "./components/PoliciesStep";
 import PreviewStep from "./components/PreviewStep";
 import PublishStep from "./components/PublishStep";
 
-function StepContent({ step }: { step: number }) {
+function StepContent({ step, canPublish }: { step: number; canPublish: boolean }) {
   switch (step) {
     case 1: return <ImageUploadStep />;
     case 2: return <ProductDetailsStep />;
@@ -20,14 +20,29 @@ function StepContent({ step }: { step: number }) {
     case 4: return <LocationStep />;
     case 5: return <PoliciesStep />;
     case 6: return <PreviewStep />;
-    case 7: return <PublishStep />;
+    case 7: return <PublishStep canPublish={canPublish} />;
     default: return null;
   }
 }
 
 export default function NewListingPage() {
   const dispatch = useAppDispatch();
+
   const { currentStep, draft } = useAppSelector((s) => s.listing);
+
+  // Determine if required details are filled
+  const canPublish = Boolean(
+    draft.title &&
+    draft.category &&
+    typeof draft.pricePerDay === "number" &&
+    draft.pricePerDay > 0 &&
+    draft.address &&
+    draft.images && draft.images.length > 0
+  );
+
+  // Note: navigation is free across all steps.
+  // The Publish button in step 7 is disabled when canPublish is false.
+
 
   // Auto-save toast simulation
   const handleSaveDraft = () => {
@@ -89,12 +104,13 @@ export default function NewListingPage() {
       <main className="container mx-auto px-4 max-w-5xl py-8">
         {/* Step Indicator */}
         <div className="mb-10">
-          <StepIndicator />
+          <StepIndicator canPublish={canPublish} />
+          {/* Pass validation flag to Publish step */}
         </div>
 
         {/* Step Content */}
         <div className="min-h-[500px]">
-          <StepContent step={currentStep} />
+          <StepContent step={currentStep} canPublish={canPublish} />
         </div>
       </main>
 

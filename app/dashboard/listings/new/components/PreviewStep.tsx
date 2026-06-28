@@ -114,7 +114,7 @@ export default function PreviewStep() {
           </div>
 
           {/* Details grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="bg-muted/30 rounded-xl p-3 text-center">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Condition</p>
               <p className="text-sm font-bold text-accent mt-1 capitalize">{draft.condition.replace("-", " ")}</p>
@@ -126,10 +126,6 @@ export default function PreviewStep() {
             <div className="bg-muted/30 rounded-xl p-3 text-center">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Quantity</p>
               <p className="text-sm font-bold text-accent mt-1">{draft.quantity}</p>
-            </div>
-            <div className="bg-muted/30 rounded-xl p-3 text-center">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Policy</p>
-              <p className="text-sm font-bold text-accent mt-1 capitalize">{draft.cancellationPolicy}</p>
             </div>
           </div>
 
@@ -155,23 +151,8 @@ export default function PreviewStep() {
             <div className="flex items-start gap-3">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary shrink-0 mt-0.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
               <div>
-                <p className="text-sm font-semibold text-accent">{draft.hideExactAddress ? "Approximate area" : draft.address}</p>
+                <p className="text-sm font-semibold text-accent">{draft.address}</p>
                 {draft.city && <p className="text-xs text-muted-foreground">{draft.city}</p>}
-              </div>
-            </div>
-          )}
-
-          {/* Add-ons */}
-          {draft.addOns.filter((a) => a.enabled).length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold text-accent uppercase tracking-widest mb-2">Available Add-ons</h4>
-              <div className="space-y-1">
-                {draft.addOns.filter((a) => a.enabled).map((a) => (
-                  <div key={a.id} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{a.name}</span>
-                    <span className="font-semibold text-accent">${a.price}</span>
-                  </div>
-                ))}
               </div>
             </div>
           )}

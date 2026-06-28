@@ -48,7 +48,6 @@ export default function ProductDetailsStep() {
 
   // Price preview helper
   const dailyPrice = typeof draft.pricePerDay === "number" ? draft.pricePerDay : 0;
-  const weeklyDiscount = typeof draft.weeklyDiscount === "number" ? draft.weeklyDiscount : 0;
 
   return (
     <div className="space-y-6">
@@ -268,20 +267,10 @@ export default function ProductDetailsStep() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Weekend Rate</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">$</span>
-                    <input type="number" value={draft.weekendRate} onChange={(e) => dispatch(updateDraft({ weekendRate: e.target.value ? Number(e.target.value) : "" }))} placeholder="0.00" className="w-full bg-white border-none rounded-xl pl-8 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Weekly Discount (%)</label>
-                  <input type="number" value={draft.weeklyDiscount} onChange={(e) => dispatch(updateDraft({ weeklyDiscount: e.target.value ? Number(e.target.value) : "" }))} placeholder="0" min="0" max="100" className="w-full bg-white border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60" />
-                </div>
-                <div className="space-y-2">
                   <label className="text-[10px] font-bold tracking-widest text-accent uppercase">Minimum Rental (days)</label>
                   <input type="number" value={draft.minRentalDays} onChange={(e) => dispatch(updateDraft({ minRentalDays: e.target.value ? Number(e.target.value) : "" }))} placeholder="1" min="1" className="w-full bg-white border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all placeholder:text-muted-foreground/60" />
                 </div>
+                
               </div>
             )}
 
@@ -294,10 +283,7 @@ export default function ProductDetailsStep() {
                   <div className="flex justify-between"><span className="text-muted-foreground">3 days</span><span className="font-bold text-accent">${dailyPrice * 3}</span></div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">7 days</span>
-                    <span className="font-bold text-accent">
-                      ${Math.round(dailyPrice * 7 * (1 - weeklyDiscount / 100))}
-                      {weeklyDiscount > 0 && <span className="text-primary text-xs ml-1">(-{weeklyDiscount}%)</span>}
-                    </span>
+                    <span className="font-bold text-accent">${Math.round(dailyPrice * 7)}</span>
                   </div>
                 </div>
               </div>
