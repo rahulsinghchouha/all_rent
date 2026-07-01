@@ -1,26 +1,18 @@
 import { db } from "@/app/utils/dbConnect";
 import { products } from "@/app/tables/productsTable";
 import { insertProductSchema, InsertProduct } from "@/app/tablesValidation/productsValidation";
-import { users } from "@/app/tables/usersTable";
 import { and, eq } from "drizzle-orm";
-
-export async function getDefaultOwnerId() {
-  const [owner] = await db.select({ id: users.id }).from(users).limit(1);
-  return owner?.id;
-}
 
 export async function createProductService(
   productData: Omit<InsertProduct, "id" | "createdAt" | "updatedAt" | "deletedAt"> & {
-    ownerId?: string;
+    ownerId: string;
   }
 ) {
-  const ownerId =
-    productData.ownerId ||
-    process.env.DEFAULT_OWNER_ID ||
-    (await getDefaultOwnerId());
+  console.log("Creating product with data:", productData);
+  const ownerId = productData.ownerId;
 
   if (!ownerId) {
-    throw new Error("No product owner configured. Set DEFAULT_OWNER_ID or create a user first.");
+    throw new Error("Product ownerId is required.");
   }
 
   const payload = {

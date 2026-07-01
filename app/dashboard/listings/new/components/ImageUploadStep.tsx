@@ -2,6 +2,7 @@
 
 import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
 import { updateDraft, nextStep, type ImageFile } from "@/app/store/listingSlice";
+import { fetchWithAuth } from "@/app/lib/fetcher";
 import { useRef, useState } from "react";
 
 const MAX_IMAGES = 10;
@@ -33,7 +34,7 @@ export default function ImageUploadStep() {
         formData.append("images", file);
       });
 
-      const response = await fetch("/api/uploads", {
+      const response = await fetchWithAuth("/api/uploads", {
         method: "POST",
         body: formData,
       });

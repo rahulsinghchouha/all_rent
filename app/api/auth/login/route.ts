@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { loginSchema } from "@/app/tablesValidation/userValidation";
-import { loginUserService } from "@/app/services/auth";
-
-
+import { loginUserService, createAccessToken, createRefreshToken } from "@/app/services/auth";
 
 export async function POST(req: Request) {
   try {
@@ -18,11 +15,27 @@ export async function POST(req: Request) {
     }
 
     const user = await loginUserService(parsed.data.email, parsed.data.password);
+    const accessToken = createAccessToken(user);
+    const refreshToken = createRefreshToken(user);
 
-    return NextResponse.json({
-      message: "Login successful",
-      data: user,
+    const response = NextResponse.json(
+      {
+        message: "Login successful",
+        data: user,
+        accessToken,
+      },
+      { status: 200 }
+    );
+
+    response.cookies.set("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
     });
+
+    return response;
   } catch (error: any) {
     console.error("🔴 LOGIN ERROR:", error?.message);
 

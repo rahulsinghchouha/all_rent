@@ -2,6 +2,7 @@
 
 import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
 import { updateDraft, prevStep, resetDraft } from "@/app/store/listingSlice";
+import { fetchWithAuth } from "@/app/lib/fetcher";
 import { useState } from "react";
 
 type PublishOption = "now" | "schedule" | "draft";
@@ -29,7 +30,7 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
       formData.append("images", img.file as File, img.file.name || img.id);
     });
 
-    const response = await fetch("/api/uploads", {
+    const response = await fetchWithAuth("/api/uploads", {
       method: "POST",
       body: formData,
     });
@@ -107,7 +108,7 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
     };
 
     try {
-      const response = await fetch("/api/products", {
+      const response = await fetchWithAuth("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(productPayload),

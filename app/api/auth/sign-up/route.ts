@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { signUpSchema } from "@/app/tablesValidation/userValidation";
-import { createUserService } from "@/app/services/auth";
+import { createUserService, createAccessToken, createRefreshToken } from "@/app/services/auth";
 
 // In-memory store for rate limiting IP sign-ups
 const rateLimitMap = new Map<string, { count: number, lastReset: number }>();
@@ -56,10 +56,27 @@ export async function POST(req: Request) {
     rateData.count += 1;
     rateLimitMap.set(ip, rateData);
 
-    return NextResponse.json({
-      message: "User created successfully",
-      data: newUser,
+    const accessToken = createAccessToken(newUser);
+    const refreshToken = createRefreshToken(newUser);
+
+    const response = NextResponse.json(
+      {
+        message: "User created successfully",
+        data: newUser,
+        accessToken,
+      },
+      { status: 201 }
+    );
+
+    response.cookies.set("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
     });
+
+    return response;
   } catch (error: any) {
     console.error("🔴 SIGN-UP ERROR:", error?.message, error);
     if (error.message === "Email already exists") {

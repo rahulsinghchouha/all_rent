@@ -27,7 +27,10 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (res.ok) {
-                router.push("/dashboard");
+                if (data.accessToken) {
+                    localStorage.setItem("accessToken", data.accessToken);
+                }
+                router.replace("/dashboard");
             } else {
                 setError(data.error || "Login failed");
             }

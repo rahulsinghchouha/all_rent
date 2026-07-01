@@ -62,6 +62,9 @@ export default function SignUpPage() {
             });
             const data = await response.json();
             if (response.ok) {
+                if (data.accessToken) {
+                    localStorage.setItem("accessToken", data.accessToken);
+                }
                 console.log('User created successfully:', data);
                 router.push('/dashboard');
             } else {
