@@ -22,6 +22,7 @@ export default function LoginPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
+                credentials: "include",
             });
 
             const data = await res.json();
@@ -30,7 +31,8 @@ export default function LoginPage() {
                 if (data.accessToken) {
                     localStorage.setItem("accessToken", data.accessToken);
                 }
-                router.replace("/dashboard");
+                console.log("Login successful:", data);
+                window.location.assign("/dashboard");
             } else {
                 setError(data.error || "Login failed");
             }

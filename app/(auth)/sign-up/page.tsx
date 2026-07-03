@@ -58,7 +58,8 @@ export default function SignUpPage() {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(userData)
+                body: JSON.stringify(userData),
+                credentials: 'include'
             });
             const data = await response.json();
             if (response.ok) {
@@ -66,7 +67,7 @@ export default function SignUpPage() {
                     localStorage.setItem("accessToken", data.accessToken);
                 }
                 console.log('User created successfully:', data);
-                router.push('/dashboard');
+                window.location.assign('/dashboard');
             } else {
                 console.error('Error creating user:', data);
             }

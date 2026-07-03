@@ -1,23 +1,45 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createProductService, getProductsService } from "@/app/services/products";
-import { verifyAccessToken } from "@/app/services/auth";
+import { verifyAccessToken, verifyRefreshToken } from "@/app/services/auth";
 
 function getBearerToken(req: Request) {
   const authHeader = req.headers.get("authorization") ?? "";
   return authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 }
 
-function requireAuth(req: Request) {
-  const token = getBearerToken(req);
-  if (!token) {
+async function getAccessToken(req: Request) {
+  const headerToken = getBearerToken(req);
+  if (headerToken) {
+    return headerToken;
+  }
+
+  const cookieStore = await cookies();
+  return cookieStore.get("accessToken")?.value ?? null;
+}
+
+async function requireAuth(req: Request) {
+  const token = await getAccessToken(req);
+  if (token) {
+    try {
+      return verifyAccessToken(token);
+    } catch {
+      // continue to refresh token fallback
+    }
+  }
+
+  const cookieStore = await cookies();
+  const refreshToken = cookieStore.get("refreshToken")?.value;
+  if (!refreshToken) {
     throw new Error("Missing access token");
   }
-  return verifyAccessToken(token);
+
+  return verifyRefreshToken(refreshToken);
 }
 
 export async function GET(req: Request) {
   try {
-    requireAuth(req);
+    await requireAuth(req);
     const url = new URL(req.url);
     const status = url.searchParams.get("status") ?? "published";
     const ownerId = url.searchParams.get("ownerId") ?? undefined;
@@ -45,7 +67,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const user = requireAuth(req);
+    const user = await requireAuth(req);
     const body = await req.json();
     const product = await createProductService({
       ...body,
@@ -66,6 +88,7 @@ export async function POST(req: Request) {
       if (error.message.includes("Product ownerId is required")) {
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ error: "Failed to create product" }, { status: 500 });

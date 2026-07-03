@@ -1,19 +1,41 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { randomUUID } from "crypto";
 import minioClient, { ensureBucketExists, MINIO_BUCKET, MINIO_PUBLIC_URL } from "@/app/utils/minIo";
-import { verifyAccessToken } from "@/app/services/auth";
+import { verifyAccessToken, verifyRefreshToken } from "@/app/services/auth";
 
 function getBearerToken(req: Request) {
   const authHeader = req.headers.get("authorization") ?? "";
   return authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 }
 
-function requireAuth(req: Request) {
-  const token = getBearerToken(req);
-  if (!token) {
+async function getAccessToken(req: Request) {
+  const headerToken = getBearerToken(req);
+  if (headerToken) {
+    return headerToken;
+  }
+
+  const cookieStore = await cookies();
+  return cookieStore.get("accessToken")?.value ?? null;
+}
+
+async function requireAuth(req: Request) {
+  const token = await getAccessToken(req);
+  if (token) {
+    try {
+      return verifyAccessToken(token);
+    } catch {
+      // continue to refresh token fallback
+    }
+  }
+
+  const cookieStore = await cookies();
+  const refreshToken = cookieStore.get("refreshToken")?.value;
+  if (!refreshToken) {
     throw new Error("Missing access token");
   }
-  return verifyAccessToken(token);
+
+  return verifyRefreshToken(refreshToken);
 }
 
 function isFile(value: FormDataEntryValue): value is File {
@@ -22,7 +44,7 @@ function isFile(value: FormDataEntryValue): value is File {
 
 export async function POST(req: Request) {
   try {
-    requireAuth(req);
+    await requireAuth(req);
     const formData = await req.formData();
     const files = formData.getAll("images").filter(isFile);
 

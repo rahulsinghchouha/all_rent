@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { signUpSchema } from "@/app/tablesValidation/userValidation";
 import { createUserService, createAccessToken, createRefreshToken } from "@/app/services/auth";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 // In-memory store for rate limiting IP sign-ups
 const rateLimitMap = new Map<string, { count: number, lastReset: number }>();
 
@@ -68,10 +70,18 @@ export async function POST(req: Request) {
       { status: 201 }
     );
 
+    response.cookies.set("accessToken", accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 15 * 60,
+    });
+
     response.cookies.set("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      secure: isProduction,
+      sameSite: "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60,
     });
