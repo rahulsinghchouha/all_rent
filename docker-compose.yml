@@ -6,6 +6,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:123456@db:5432/all_rent
       - DEFAULT_OWNER_ID=${DEFAULT_OWNER_ID}
       - MINIO_ENDPOINT=localhost
       - MINIO_PORT=9000
@@ -24,8 +25,8 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: rents_dev
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: all_rent
     ports:
       - "5432:5432"
     volumes:

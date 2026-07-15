@@ -3,12 +3,60 @@ import { products } from "@/app/tables/productsTable";
 import { insertProductSchema, InsertProduct } from "@/app/tablesValidation/productsValidation";
 import { and, eq } from "drizzle-orm";
 
+export async function updateProductService(
+  id: string,
+  productData: Partial<Omit<InsertProduct, "id" | "createdAt" | "updatedAt" | "deletedAt">> & {
+    ownerId?: string;
+  }
+) {
+  const payload = {
+    ...productData,
+    updatedAt: new Date(),
+    publishDate: productData.publishDate ? new Date(String(productData.publishDate)) : undefined,
+  };
+
+  const parsed = insertProductSchema.partial().safeParse(payload);
+  if (!parsed.success) {
+    const formatted = parsed.error.format();
+    const messages = Object.entries(formatted)
+      .map(([key, value]) => {
+        if (typeof value === "object" && value !== null && "_errors" in value) {
+          const typedValue = value as { _errors?: string[] };
+          return `${key}: ${typedValue._errors?.join(", ") ?? "Invalid value"}`;
+        }
+        return `${key}: ${String(value)}`;
+      })
+      .filter(Boolean)
+      .join("; ");
+    throw new Error(`Validation failed: ${messages}`);
+  }
+
+  const [updatedProduct] = await db
+    .update(products)
+    .set(parsed.data)
+    .where(eq(products.id, id))
+    .returning({
+      id: products.id,
+      title: products.title,
+      ownerId: products.ownerId,
+      category: products.category,
+      pricePerDay: products.pricePerDay,
+      badge: products.badge,
+      imageUrls: products.imageUrls,
+      status: products.status,
+      publishDate: products.publishDate,
+      createdAt: products.createdAt,
+      updatedAt: products.updatedAt,
+    });
+
+  return updatedProduct ?? null;
+}
+
 export async function createProductService(
   productData: Omit<InsertProduct, "id" | "createdAt" | "updatedAt" | "deletedAt"> & {
     ownerId: string;
   }
 ) {
-  console.log("Creating product with data:", productData);
   const ownerId = productData.ownerId;
 
   if (!ownerId) {
@@ -39,24 +87,38 @@ export async function createProductService(
     throw new Error(`Validation failed: ${messages}`);
   }
 
-  const [newProduct] = await db
-    .insert(products)
-    .values(parsed.data)
-    .returning({
-      id: products.id,
-      title: products.title,
-      ownerId: products.ownerId,
-      category: products.category,
-      pricePerDay: products.pricePerDay,
-      badge: products.badge,
-      imageUrls: products.imageUrls,
-      status: products.status,
-      publishDate: products.publishDate,
-      createdAt: products.createdAt,
-      updatedAt: products.updatedAt,
-    });
+  // const [newProduct] =
+  try {
+    await db
+      .insert(products)
+      .values(parsed.data)
+      .returning({
+        id: products.id,
+        title: products.title,
+        ownerId: products.ownerId,
+        category: products.category,
+        pricePerDay: products.pricePerDay,
+        badge: products.badge,
+        imageUrls: products.imageUrls,
+        status: products.status,
+        publishDate: products.publishDate,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+      });
+  }
+  catch (error) {
+    console.error("🔴 PRODUCT INSERT ERROR");
+    console.error(error);
 
-  return newProduct;
+    if (error instanceof Error) {
+      console.error(error.message);
+      console.error(error.stack);
+    }
+
+    throw error; // Don't wrap it for now
+  }
+
+  // return newProduct;
 }
 
 export type ProductFilters = {

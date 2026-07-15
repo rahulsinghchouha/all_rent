@@ -1,8 +1,20 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // ── Data ────────────────────────────────────────────────────────────────────
+
+type ListingItem = {
+  id: string;
+  title: string;
+  owner: string;
+  rating: number;
+  reviews: number;
+  price: number;
+  category: string;
+  badge: string | null;
+  image: string;
+};
 
 const categories = [
   { label: "Electronics", emoji: "💻", color: "bg-blue-50 text-blue-600" },
@@ -11,97 +23,6 @@ const categories = [
   { label: "Power Tools", emoji: "🔧", color: "bg-yellow-50 text-yellow-600" },
   { label: "Luxury Wear", emoji: "👜", color: "bg-pink-50 text-pink-600" },
   { label: "Adventure", emoji: "🏕️", color: "bg-orange-50 text-orange-600" },
-];
-
-const listings = [
-  {
-    id: 1,
-    title: "Sony Alpha a7 IV Mirrorless Camera",
-    owner: "Marcus V.",
-    rating: 4.9,
-    reviews: 134,
-    price: 45,
-    category: "Photography",
-    badge: "Top Rated",
-    image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&q=80",
-  },
-  {
-    id: 2,
-    title: "DJI Mavic 3 Pro – Professional Drone",
-    owner: "Sarah K.",
-    rating: 4.8,
-    reviews: 89,
-    price: 120,
-    category: "Electronics",
-    badge: "Popular",
-    image: "https://images.unsplash.com/photo-1508614589041-895b88991e3e?w=400&q=80",
-  },
-  {
-    id: 3,
-    title: "Specialized Diverge SVO STR Bike",
-    owner: "Tom R.",
-    rating: 4.7,
-    reviews: 61,
-    price: 35,
-    category: "Sports",
-    badge: null,
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80",
-  },
-  {
-    id: 4,
-    title: "DeWalt 20V Max Drill Set",
-    owner: "Lisa M.",
-    rating: 4.6,
-    reviews: 42,
-    price: 25,
-    category: "Power Tools",
-    badge: null,
-    image: "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=400&q=80",
-  },
-  {
-    id: 5,
-    title: "North Face 6-Person Camping Tent",
-    owner: "Jake A.",
-    rating: 4.8,
-    reviews: 77,
-    price: 40,
-    category: "Adventure",
-    badge: "New",
-    image: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400&q=80",
-  },
-  {
-    id: 6,
-    title: "Gucci Marmont 1955 Shoulder Bag",
-    owner: "Nina P.",
-    rating: 4.9,
-    reviews: 53,
-    price: 85,
-    category: "Luxury Wear",
-    badge: "Trending",
-    image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&q=80",
-  },
-  {
-    id: 7,
-    title: "Bose a1 Portable Bluetooth Speaker",
-    owner: "Chris D.",
-    rating: 4.5,
-    reviews: 38,
-    price: 20,
-    category: "Electronics",
-    badge: null,
-    image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&q=80",
-  },
-  {
-    id: 8,
-    title: "Zhiyun Crane 2S Gimbal Stabilizer",
-    owner: "Amy W.",
-    rating: 4.7,
-    reviews: 29,
-    price: 30,
-    category: "Photography",
-    badge: null,
-    image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=400&q=80",
-  },
 ];
 
 const trustFeatures = [
@@ -140,12 +61,61 @@ export default function DashboardPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [products, setProducts] = useState<ListingItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = listings.filter((l) => {
-    const matchCat = activeCategory ? l.category === activeCategory : true;
-    const matchQ = searchQuery ? l.title.toLowerCase().includes(searchQuery.toLowerCase()) : true;
+  const filtered = products.filter((item) => {
+    const matchCat = activeCategory ? item.category === activeCategory : true;
+    const matchQ = searchQuery ? item.title.toLowerCase().includes(searchQuery.toLowerCase()) : true;
     return matchCat && matchQ;
   });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchProducts() {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/products?status=published&limit=50", {
+          credentials: "include",
+        });
+        const result = await response.json();
+
+        if (!isMounted) return;
+
+        const data = Array.isArray(result?.data) ? result.data : [];
+        const mappedProducts: ListingItem[] = data.map((item: any) => ({
+          id: item.id,
+          title: item.title ?? "Untitled product",
+          owner: item.ownerId ? `Owner ${String(item.ownerId).slice(0, 8)}` : "Owner",
+          rating: Number(item.rating ?? 0),
+          reviews: Number(item.reviewsCount ?? 0),
+          price: Number(item.pricePerDay ?? 0),
+          category: item.category ?? "General",
+          badge: item.badge ?? null,
+          image: Array.isArray(item.imageUrls) && item.imageUrls.length > 0 ? item.imageUrls[0] : "https://placehold.co/400x300/f5f5f5/999?text=Product",
+        }));
+
+        setProducts(mappedProducts);
+      } catch (error) {
+        console.error("error in fetching products", error);
+        if (isMounted) {
+          setProducts([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -313,7 +283,12 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <div className="text-4xl mb-3">⏳</div>
+              <p className="font-semibold">Loading products...</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
               <div className="text-4xl mb-3">🔍</div>
               <p className="font-semibold">No results found</p>
@@ -322,9 +297,10 @@ export default function DashboardPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {filtered.map((item) => (
-                <div
+                <Link
                   key={item.id}
-                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-border group"
+                  href={`/dashboard/products/${item.id}`}
+                  className="block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-border group"
                 >
                   {/* Image */}
                   <div className="relative h-48 overflow-hidden">
@@ -370,7 +346,7 @@ export default function DashboardPage() {
                       </button>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
