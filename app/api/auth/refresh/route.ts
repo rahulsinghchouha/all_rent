@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { verifyRefreshToken, createAccessToken, createRefreshToken } from "@/app/services/auth";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const refreshToken = req.cookies.get("refreshToken")?.value;
 
