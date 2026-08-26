@@ -49,6 +49,7 @@ export default function ChatPage() {
   const productId = params?.id as string;
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState("");
+  const [showSummary, setShowSummary] = useState(false);
 
   const sendMessage = () => {
     const trimmed = draft.trim();
@@ -92,12 +93,21 @@ export default function ChatPage() {
               <p className="text-sm text-slate-500">Typically replies in under 1 hour.</p>
             </div>
           </div>
-          <div className="flex flex-col gap-2 rounded-3xl bg-slate-50 px-4 py-3 text-sm shadow-sm sm:text-right">
-            <span className="text-xs uppercase tracking-[0.24em] text-slate-400">Status</span>
-            <span className="inline-flex items-center gap-2 font-semibold text-slate-900">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Online
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block flex-col gap-2 rounded-3xl bg-slate-50 px-4 py-3 text-sm shadow-sm sm:text-right">
+              <span className="text-xs uppercase tracking-[0.24em] text-slate-400">Status</span>
+              <span className="inline-flex items-center gap-2 font-semibold text-slate-900">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Online
+              </span>
+            </div>
+            <button
+              onClick={() => setShowSummary((s) => !s)}
+              className="sm:hidden inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-sm font-semibold shadow-sm"
+            >
+              {showSummary ? 'Hide' : 'Summary'}
+            </button>
           </div>
+          
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
@@ -119,8 +129,8 @@ export default function ChatPage() {
               </div>
             </div>
 
-            <div className="flex min-h-[520px] flex-col overflow-hidden bg-slate-50">
-              <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-7">
+            <div className="flex min-h-[360px] sm:min-h-[520px] flex-col overflow-hidden bg-slate-50">
+              <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-7 sm:py-6">
                 <div className="space-y-4">
                   {messages.map((message) => {
                     const isRenter = message.sender === "renter";
@@ -143,7 +153,7 @@ export default function ChatPage() {
                 </div>
               </div>
 
-              <div className="border-t border-slate-200 bg-white px-5 py-4 sm:px-6">
+              <div className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                   <label htmlFor="chat-input" className="sr-only">
                     Write a message
@@ -155,7 +165,7 @@ export default function ChatPage() {
                     onKeyDown={handleKeyDown}
                     placeholder="Type your message..."
                     rows={2}
-                    className="min-h-[72px] w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
+                    className="min-h-[72px] w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10 touch-manipulation"
                   />
                   <button
                     type="button"
@@ -169,7 +179,7 @@ export default function ChatPage() {
             </div>
           </section>
 
-          <aside className="space-y-5">
+          <aside className={`${showSummary ? 'block' : 'hidden'} sm:block space-y-5 transition-all`}>
             <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Booking summary</h2>
               <div className="mt-4 space-y-3 text-sm text-slate-600">

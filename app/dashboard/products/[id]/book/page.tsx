@@ -487,7 +487,7 @@ export default function BookingPage() {
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-6 pb-28">
 
         {/* ═══════════════════════════════════════════
             STEP 1 — DURATION
@@ -500,7 +500,7 @@ export default function BookingPage() {
             <ProductMiniCard product={product} />
 
             {/* Calendar section */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 md:p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold text-slate-800" style={{ fontFamily: "Poppins, sans-serif" }}>Select Dates</h2>
                 {booking.startDate && booking.endDate && (
@@ -530,7 +530,7 @@ export default function BookingPage() {
             </div>
 
             {/* Quantity */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 flex items-center justify-between">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 md:p-5 flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-slate-800">Quantity</p>
                 <p className="text-xs text-slate-400 mt-0.5">Items available: {maxQty}</p>
@@ -553,7 +553,7 @@ export default function BookingPage() {
             </div>
 
             {/* Price Details */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 md:p-5">
               <h2 className="text-base font-bold text-slate-800 mb-4" style={{ fontFamily: "Poppins, sans-serif" }}>Price Details</h2>
               <div className="space-y-2.5">
                 <div className="flex justify-between text-sm text-slate-600">
@@ -594,7 +594,7 @@ export default function BookingPage() {
             <StepProgress step={2} />
 
             {/* Method selector */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 md:p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-bold text-slate-800">Select Method</h2>
                 <span className="text-[10px] font-bold text-primary bg-orange-50 border border-orange-100 px-2.5 py-1 rounded-full uppercase tracking-wide">Popular</span>
@@ -651,7 +651,7 @@ export default function BookingPage() {
 
             {/* Delivery Address (shown when delivery selected) */}
             {booking.deliveryMethod === "delivery" && (
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 animate-[fadeIn_0.2s_ease]">
+              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 md:p-5 animate-[fadeIn_0.2s_ease]">
                 <h2 className="text-sm font-bold text-slate-800 mb-1">Delivery Address</h2>
                 <p className="text-xs text-slate-400 mb-4">Where should we drop off the items?</p>
 
@@ -717,7 +717,7 @@ export default function BookingPage() {
             )}
 
             {/* Fee Breakdown */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 md:p-5">
               <h2 className="text-base font-bold text-slate-800 mb-4" style={{ fontFamily: "Poppins, sans-serif" }}>Fee Breakdown</h2>
               <div className="space-y-3">
                 <div className="flex justify-between text-sm text-slate-600">
@@ -764,7 +764,7 @@ export default function BookingPage() {
             />
 
             {/* Payment Methods */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 md:p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold text-slate-800" style={{ fontFamily: "Poppins, sans-serif" }}>Payment Method</h2>
                 <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">Encrypted</span>
@@ -861,7 +861,7 @@ export default function BookingPage() {
             </div>
 
             {/* Order Summary */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-5">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 md:p-5">
               <h2 className="text-base font-bold text-slate-800 mb-4" style={{ fontFamily: "Poppins, sans-serif" }}>Order Summary</h2>
               <div className="space-y-3">
                 <div className="flex justify-between text-sm text-slate-600">
@@ -1078,7 +1078,7 @@ export default function BookingPage() {
       {/* ── Sticky CTA Footer (Steps 1–3) ── */}
       {step < 4 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 shadow-2xl p-4 z-40">
-          <div className="max-w-lg mx-auto flex flex-col gap-2">
+          <div className="max-w-4xl mx-auto flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <button
               disabled={
                 (step === 1 && (!booking.startDate || !booking.endDate)) ||
@@ -1089,7 +1089,7 @@ export default function BookingPage() {
                 else if (step === 2) setStep(3);
                 else if (step === 3) handleConfirmBooking();
               }}
-              className={`w-full py-4 rounded-2xl font-bold text-white text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
+              className={`w-full md:max-w-xl py-4 rounded-2xl font-bold text-white text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
                 (step === 1 && (!booking.startDate || !booking.endDate))
                   ? "bg-slate-300 cursor-not-allowed shadow-none"
                   : "bg-primary hover:bg-primary/90 shadow-primary/30 active:scale-[0.98]"
