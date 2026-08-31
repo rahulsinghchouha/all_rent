@@ -38,7 +38,15 @@ export async function createUserService(userData: Pick<InsertUser, "userName" | 
 
         return newUser;
     } catch (error: any) {
-        if (error.code === '23505') {
+        const databaseError = error?.cause ?? error;
+        const errorMessage = String(databaseError?.message ?? error?.message ?? "");
+        const isDuplicateEmail =
+            databaseError?.code === "23505" ||
+            databaseError?.constraint === "users_email_unique" ||
+            errorMessage.includes("users_email_unique") ||
+            errorMessage.includes("duplicate key");
+
+        if (isDuplicateEmail) {
             throw new Error("Email already exists");
         }
         throw error;
