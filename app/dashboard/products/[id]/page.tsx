@@ -28,6 +28,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -36,6 +37,19 @@ export default function ProductDetailPage() {
     city: "",
     condition: "",
   });
+
+  // Get current user from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setCurrentUserId(user.id);
+      } catch {
+        setCurrentUserId(null);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!productId) return;
@@ -262,12 +276,14 @@ export default function ProductDetailPage() {
                 </div>
               ) : (
                 <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]">
-                  <Link
-                    href={`/dashboard/products/${product.id}/book`}
-                    className="inline-flex items-center justify-center rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
-                  >
-                    Book this item
-                  </Link>
+                  {currentUserId !== product.ownerId && (
+                    <Link
+                      href={`/dashboard/products/${product.id}/book`}
+                      className="inline-flex items-center justify-center rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
+                    >
+                      Book this item
+                    </Link>
+                  )}
                   <Link
                     href={`/dashboard/products/${product.id}/chat`}
                     aria-label="Chat with owner"
