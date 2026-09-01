@@ -1,3 +1,16 @@
+/**
+ * Conversations Table
+ * 
+ * Stores chat conversations between two users
+ * Used to track inquiries: product owner ↔ interested renter
+ * 
+ * Fields:
+ * - userOneId, userTwoId: The two participants in the conversation
+ * - created/updatedAt: Timestamps for tracking conversation history
+ * 
+ * Unique constraint ensures only one conversation per user pair
+ */
+
 import { pgTable, uuid, timestamp,unique} from "drizzle-orm/pg-core";
 import {users} from "./usersTable";
 

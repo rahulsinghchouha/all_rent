@@ -1,3 +1,17 @@
+/**
+ * Product Detail Page
+ * 
+ * Features:
+ * - Display full product information and images
+ * - Edit product details (title, price, description, etc.)
+ * - Conditional button display based on user role:
+ *   - If user is product OWNER: Shows only Chat button (to view inquiries)
+ *   - If user is NOT owner: Shows Book + Chat buttons
+ * - Chat button links to conversation list with inquiring users
+ * 
+ * Owner identification: Compares currentUserId with product.ownerId from localStorage
+ */
+
 "use client";
 
 import Link from "next/link";
@@ -276,6 +290,7 @@ export default function ProductDetailPage() {
                 </div>
               ) : (
                 <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]">
+                  {/* Chat feature: Hide "Book" button if current user is the owner */}
                   {currentUserId !== product.ownerId && (
                     <Link
                       href={`/dashboard/products/${product.id}/book`}

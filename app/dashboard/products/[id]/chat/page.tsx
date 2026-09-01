@@ -1,3 +1,16 @@
+/**
+ * Chat Page Component
+ * 
+ * Features:
+ * - Owner views list of users who inquired about their product
+ * - Click on a user to open their conversation
+ * - Send/receive messages with inquiring users
+ * - Each user has their own chat thread with message history
+ * - Shows user online/offline status and response rate
+ * 
+ * Frontend only - uses mock data for 3 dummy users and message threads
+ */
+
 "use client";
 
 import Link from "next/link";
@@ -21,6 +34,7 @@ type ChatUser = {
   responseRate: number;
 };
 
+// Mock data: 3 users who inquired about the product
 const dummyUsers: ChatUser[] = [
   {
     id: "user1",
@@ -51,6 +65,7 @@ const dummyUsers: ChatUser[] = [
   },
 ];
 
+// Mock message threads for each user - indexed by user ID
 const chatMessages: Record<string, Message[]> = {
   user1: [
     {
@@ -322,6 +337,7 @@ export default function ChatPage() {
   }
 
   // Show users list if no user is selected
+  // Display all inquiries from users interested in this product
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">

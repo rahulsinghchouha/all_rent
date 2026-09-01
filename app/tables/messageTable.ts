@@ -1,3 +1,17 @@
+/**
+ * Messages Table
+ * 
+ * Stores individual messages within conversations
+ * Each message belongs to a conversation and has a sender
+ * 
+ * Fields:
+ * - conversationId: Links to the conversation
+ * - senderId: User who sent the message (owner or renter)
+ * - content: Message text
+ * - messageType: Type of message (TEXT, IMAGE, etc.)
+ * - created/updatedAt: Message timestamps
+ */
+
 import { pgTable, uuid, timestamp, text,varchar} from "drizzle-orm/pg-core";
 import {conversationsTable} from "./conversationTable";
 import { users } from "./usersTable";
