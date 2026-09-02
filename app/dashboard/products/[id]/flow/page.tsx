@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 const ChatPage = dynamic(() => import("../chat/page").then((m) => m.default), { ssr: false });
@@ -12,10 +12,6 @@ export default function FlowPage() {
   const flowParam = search?.get("flow");
 
   const [flow, setFlow] = useState<string>(flowParam === "book" ? "book" : "chat");
-
-  useEffect(() => {
-    if (flowParam === "chat" || flowParam === "book") setFlow(flowParam);
-  }, [flowParam]);
 
   return (
     <div className="min-h-screen bg-slate-50">

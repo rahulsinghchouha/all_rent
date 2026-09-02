@@ -37,12 +37,16 @@ export async function createUserService(userData: Pick<InsertUser, "userName" | 
         });
 
         return newUser;
-    } catch (error: any) {
-        const databaseError = error?.cause ?? error;
-        const errorMessage = String(databaseError?.message ?? error?.message ?? "");
+    } catch (error: unknown) {
+        const errorWithCause = error as { cause?: unknown };
+        const databaseError = errorWithCause.cause ?? error;
+        const databaseErrorRecord = typeof databaseError === "object" && databaseError !== null
+            ? databaseError as Record<string, unknown>
+            : {};
+        const errorMessage = error instanceof Error ? error.message : String(databaseErrorRecord.message ?? databaseError);
         const isDuplicateEmail =
-            databaseError?.code === "23505" ||
-            databaseError?.constraint === "users_email_unique" ||
+            databaseErrorRecord.code === "23505" ||
+            databaseErrorRecord.constraint === "users_email_unique" ||
             errorMessage.includes("users_email_unique") ||
             errorMessage.includes("duplicate key");
 

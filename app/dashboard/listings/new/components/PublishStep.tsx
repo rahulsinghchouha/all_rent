@@ -27,7 +27,9 @@ export default function PublishStep({ canPublish }: { canPublish: boolean }) {
 
     const formData = new FormData();
     files.forEach((img) => {
-      formData.append("images", img.file as File, img.file.name || img.id);
+      if (img.file) {
+        formData.append("images", img.file, img.file.name || img.id);
+      }
     });
 
     const response = await fetchWithAuth("/api/uploads", {

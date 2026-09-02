@@ -9,6 +9,8 @@ const MAX_IMAGES = 10;
 const MAX_SIZE_MB = 10;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+type UploadResult = { url: string };
+
 export default function ImageUploadStep() {
   const dispatch = useAppDispatch();
   const draft = useAppSelector((s) => s.listing.draft);
@@ -49,7 +51,7 @@ export default function ImageUploadStep() {
       const result = await response.json();
       const uploadedUrls = result.data;
 
-      const newImages: ImageFile[] = uploadedUrls.map((upload: any, i: number) => ({
+      const newImages: ImageFile[] = (uploadedUrls as UploadResult[]).map((upload, i) => ({
         id: `${Date.now()}-${i}`,
         file: undefined,
         preview: upload.url,
@@ -59,8 +61,8 @@ export default function ImageUploadStep() {
 
       dispatch(updateDraft({ images: [...draft.images, ...newImages] }));
       setUploadProgress({});
-    } catch (error: any) {
-      setErrors([error?.message || "Upload failed."]);
+    } catch (error: unknown) {
+      setErrors([error instanceof Error ? error.message : "Upload failed."]);
     } finally {
       setUploading(false);
     }

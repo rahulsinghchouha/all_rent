@@ -71,9 +71,10 @@ export async function POST(req: Request) {
     );
 
     return NextResponse.json({ data: uploads }, { status: 201 });
-  } catch (error: any) {
-    console.error("🔴 IMAGE UPLOAD ERROR:", error?.message || error);
-    if (typeof error?.message === "string" && (error.message.includes("Missing access token") || error.message.includes("jwt"))) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("🔴 IMAGE UPLOAD ERROR:", errorMessage);
+    if (errorMessage.includes("Missing access token") || errorMessage.includes("jwt")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     return NextResponse.json({ error: "Failed to upload images." }, { status: 500 });

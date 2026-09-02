@@ -57,8 +57,8 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({ data: user }, { status: 200 });
-  } catch (error: any) {
-    console.error("🔴 GET ME ERROR:", error?.message);
+  } catch (error: unknown) {
+    console.error("🔴 GET ME ERROR:", error instanceof Error ? error.message : String(error));
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

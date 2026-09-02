@@ -38,9 +38,10 @@ export async function POST(req: NextRequest) {
 
     const booking = await createBookingService(user.id, parsed.data);
     return NextResponse.json({ data: booking }, { status: 201 });
-  } catch (error: any) {
-    console.error("🔴 BOOKING CREATE ERROR:", error?.message);
-    if (error.message?.includes("Missing access token") || error.message?.includes("jwt")) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("🔴 BOOKING CREATE ERROR:", errorMessage);
+    if (errorMessage.includes("Missing access token") || errorMessage.includes("jwt")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
@@ -52,8 +53,8 @@ export async function GET(req: NextRequest) {
     const user = await requireAuth(req);
     const bookings = await getBookingsByRenterService(user.id);
     return NextResponse.json({ data: bookings }, { status: 200 });
-  } catch (error: any) {
-    console.error("🔴 BOOKING LIST ERROR:", error?.message);
+  } catch (error: unknown) {
+    console.error("🔴 BOOKING LIST ERROR:", error instanceof Error ? error.message : String(error));
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }

@@ -430,8 +430,8 @@ export default function BookingPage() {
         rentalAmount: json.data.rentalAmount,
       });
       setStep(4);
-    } catch (err: any) {
-      alert(err.message ?? "Failed to confirm booking. Please try again.");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to confirm booking. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -617,7 +617,7 @@ export default function BookingPage() {
                     </svg>
                   </div>
                   <p className="text-sm font-bold text-slate-800">Self Pickup</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Pick up from owner's location</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Pick up from owner&apos;s location</p>
                   <p className="text-xs font-bold text-slate-700 mt-2">Free</p>
                 </button>
 
@@ -743,7 +743,7 @@ export default function BookingPage() {
 
               <p className="text-[11px] text-slate-400 mt-4 leading-relaxed flex items-start gap-1.5">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
-                Final delivery fees are calculated based on your distance (4.2 miles) from the owner's hub. Taxes will be applied at the next step.
+                Final delivery fees are calculated based on your distance (4.2 miles) from the owner&apos;s hub. Taxes will be applied at the next step.
               </p>
             </div>
           </div>

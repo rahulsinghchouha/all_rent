@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch (error: any) {
-    console.error("🔴 REFRESH TOKEN ERROR:", error?.message);
+  } catch (error: unknown) {
+    console.error("🔴 REFRESH TOKEN ERROR:", error instanceof Error ? error.message : String(error));
     return NextResponse.json({ error: "Invalid or expired refresh token" }, { status: 401 });
   }
 }

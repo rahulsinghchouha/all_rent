@@ -84,7 +84,17 @@ export default function DashboardPage() {
         if (!isMounted) return;
 
         const data = Array.isArray(result?.data) ? result.data : [];
-        const mappedProducts: ListingItem[] = data.map((item: any) => ({
+        const mappedProducts: ListingItem[] = data.map((item: {
+          id: string;
+          title?: string;
+          ownerId?: string | null;
+          rating?: number;
+          reviewsCount?: number;
+          pricePerDay?: number;
+          category?: string;
+          badge?: string | null;
+          imageUrls?: string[] | null;
+        }) => ({
           id: item.id,
           title: item.title ?? "Untitled product",
           owner: item.ownerId ? `Owner ${String(item.ownerId).slice(0, 8)}` : "Owner",
@@ -209,7 +219,7 @@ export default function DashboardPage() {
                 Rent Anything.<br />Anytime. Anywhere.
               </h1>
               <p className="text-white/80 text-base md:text-lg mb-8 leading-relaxed">
-                Discover the world's most trusted marketplace for rentals — from cameras to camping gear.
+                Discover the world&apos;s most trusted marketplace for rentals — from cameras to camping gear.
               </p>
               <div className="flex flex-wrap gap-3">
                 <button

@@ -75,20 +75,21 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ data: product }, { status: 201 });
-  } catch (error: any) {
-    console.error("🔴 PRODUCT CREATE ERROR:", error?.message, error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("🔴 PRODUCT CREATE ERROR:", errorMessage, error);
 
-    if (typeof error?.message === "string") {
-      if (error.message.includes("Missing access token") || error.message.includes("jwt")) {
+    if (errorMessage) {
+      if (errorMessage.includes("Missing access token") || errorMessage.includes("jwt")) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
-      if (error.message.includes("Validation failed")) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+      if (errorMessage.includes("Validation failed")) {
+        return NextResponse.json({ error: errorMessage }, { status: 400 });
       }
-      if (error.message.includes("Product ownerId is required")) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+      if (errorMessage.includes("Product ownerId is required")) {
+        return NextResponse.json({ error: errorMessage }, { status: 400 });
       }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 
     return NextResponse.json({ error: "Failed to create product" }, { status: 500 });

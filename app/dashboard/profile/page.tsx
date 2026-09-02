@@ -23,6 +23,15 @@ type Product = {
   category?: string;
 };
 
+type ProductResponse = {
+  id: string;
+  title?: string;
+  pricePerDay?: number | string;
+  imageUrls?: string[] | null;
+  status?: string;
+  category?: string;
+};
+
 // ─── Account Menu Items ───────────────────────────────────────────────────────
 
 const menuItems = [
@@ -181,7 +190,7 @@ export default function ProfilePage() {
       const res = await fetch("/api/products?limit=50", { credentials: "include" });
       const json = await res.json();
       const data: Product[] = Array.isArray(json?.data)
-        ? json.data.map((p: any) => ({
+        ? (json.data as ProductResponse[]).map((p) => ({
             id: p.id,
             title: p.title ?? "Untitled",
             pricePerDay: Number(p.pricePerDay ?? 0),

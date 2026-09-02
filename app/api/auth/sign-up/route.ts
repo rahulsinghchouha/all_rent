@@ -87,9 +87,10 @@ export async function POST(req: Request) {
     });
 
     return response;
-  } catch (error: any) {
-    console.error("🔴 SIGN-UP ERROR:", error?.message, error);
-    if (error.message === "Email already exists") {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("🔴 SIGN-UP ERROR:", errorMessage, error);
+    if (errorMessage === "Email already exists") {
       return NextResponse.json({ error: "Email already exists" }, { status: 409 });
     }
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

@@ -36,8 +36,8 @@ export async function GET(
     }
 
     return NextResponse.json({ data: result }, { status: 200 });
-  } catch (error: any) {
-    console.error("🔴 BOOKING FETCH ERROR:", error?.message);
+  } catch (error: unknown) {
+    console.error("🔴 BOOKING FETCH ERROR:", error instanceof Error ? error.message : String(error));
     return NextResponse.json({ error: "Failed to fetch booking" }, { status: 500 });
   }
 }

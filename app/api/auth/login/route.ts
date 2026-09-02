@@ -46,10 +46,11 @@ export async function POST(req: Request) {
     });
 
     return response;
-  } catch (error: any) {
-    console.error("🔴 LOGIN ERROR:", error?.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("🔴 LOGIN ERROR:", errorMessage);
 
-    if (error.message === "Invalid email or password") {
+    if (errorMessage === "Invalid email or password") {
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }
