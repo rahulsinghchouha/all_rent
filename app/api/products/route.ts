@@ -39,10 +39,11 @@ async function requireAuth(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    await requireAuth(req);
+    const user = await requireAuth(req);
     const url = new URL(req.url);
     const status = url.searchParams.get("status") ?? "published";
     const ownerId = url.searchParams.get("ownerId") ?? undefined;
+    const excludeOwnerId = url.searchParams.get("excludeOwnerId") ?? undefined;
     const category = url.searchParams.get("category") ?? undefined;
     const limitParam = url.searchParams.get("limit");
     const limit = limitParam ? Number(limitParam) : 50;
@@ -54,6 +55,7 @@ export async function GET(req: Request) {
     const products = await getProductsService({
       status,
       ownerId: ownerId || undefined,
+      excludeOwnerId: ownerId ? undefined : excludeOwnerId || user.id,
       category: category || undefined,
       limit,
     });

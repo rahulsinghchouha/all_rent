@@ -177,17 +177,21 @@ export default function ProfilePage() {
     try {
       const res = await fetch("/api/auth/me", { credentials: "include" });
       const json = await res.json();
-      if (res.ok) setUser(json.data);
+      if (res.ok) {
+        setUser(json.data);
+        return json.data as User;
+      }
     } catch (e) {
       console.error("Failed to load user", e);
     } finally {
       setLoadingUser(false);
     }
+    return null;
   }, []);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (ownerId: string) => {
     try {
-      const res = await fetch("/api/products?limit=50", { credentials: "include" });
+      const res = await fetch(`/api/products?ownerId=${encodeURIComponent(ownerId)}&limit=50`, { credentials: "include" });
       const json = await res.json();
       const data: Product[] = Array.isArray(json?.data)
         ? (json.data as ProductResponse[]).map((p) => ({
@@ -208,8 +212,13 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    fetchUser();
-    fetchProducts();
+    async function loadProfile() {
+      const currentUser = await fetchUser();
+      if (currentUser) await fetchProducts(currentUser.id);
+      else setLoadingProducts(false);
+    }
+
+    loadProfile();
   }, [fetchUser, fetchProducts]);
 
   const handleSignOut = async () => {

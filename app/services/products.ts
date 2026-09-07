@@ -1,7 +1,7 @@
 import { db } from "@/app/utils/dbConnect";
 import { products } from "@/app/tables/productsTable";
 import { insertProductSchema, InsertProduct } from "@/app/tablesValidation/productsValidation";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 
 export async function updateProductService(
   id: string,
@@ -124,6 +124,7 @@ export async function createProductService(
 export type ProductFilters = {
   status?: string;
   ownerId?: string;
+  excludeOwnerId?: string;
   category?: string;
   limit?: number;
   offset?: number;
@@ -133,6 +134,7 @@ export async function getProductsService(filters: ProductFilters = {}) {
   const conditions = [
     filters.status ? eq(products.status, filters.status) : undefined,
     filters.ownerId ? eq(products.ownerId, filters.ownerId) : undefined,
+    filters.excludeOwnerId ? ne(products.ownerId, filters.excludeOwnerId) : undefined,
     filters.category ? eq(products.category, filters.category) : undefined,
   ];
 
