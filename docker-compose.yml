@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   app:
     build: .
@@ -8,7 +7,7 @@ services:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:123456@db:5432/all_rent
       - DEFAULT_OWNER_ID=${DEFAULT_OWNER_ID}
-      - MINIO_ENDPOINT=localhost
+      - MINIO_ENDPOINT=minio
       - MINIO_PORT=9000
       - MINIO_USE_SSL=false
       - MINIO_ACCESS_KEY=minioadmin
@@ -17,10 +16,14 @@ services:
       - MINIO_PUBLIC_URL=http://localhost:9000
     volumes:
       - ./:/app:cached
+      - /app/node_modules
+      - /app/.next
     depends_on:
-      - db
-      - minio
-  
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
   db:
     image: postgres:15-alpine
     environment:
@@ -31,7 +34,12 @@ services:
       - "5432:5432"
     volumes:
       - rents_db_data:/var/lib/postgresql/data
-  
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   minio:
     image: minio/minio:latest
     ports:
@@ -44,10 +52,10 @@ services:
     volumes:
       - rents_minio_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   rents_db_data:

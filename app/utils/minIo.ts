@@ -18,13 +18,24 @@ const minioClient = new MinioClient({
   secretKey: MINIO_SECRET_KEY,
 });
 
+const PUBLIC_READ_POLICY = (bucket: string) => JSON.stringify({
+  Version: "2012-10-17",
+  Statement: [
+    {
+      Effect: "Allow",
+      Principal: { AWS: ["*"] },
+      Action: ["s3:GetObject"],
+      Resource: [`arn:aws:s3:::${bucket}/*`],
+    },
+  ],
+});
+
 export async function ensureBucketExists() {
   const exists = await minioClient.bucketExists(MINIO_BUCKET);
   if (!exists) {
     await minioClient.makeBucket(MINIO_BUCKET, "us-east-1");
-  } else {
-    console.log("Bucket already exists.");
   }
+  await minioClient.setBucketPolicy(MINIO_BUCKET, PUBLIC_READ_POLICY(MINIO_BUCKET));
 }
 
 export default minioClient;

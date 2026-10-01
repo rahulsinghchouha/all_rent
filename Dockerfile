@@ -21,5 +21,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 
+# Migration files + runner script, needed to apply schema on startup
+COPY --from=builder /app/drizzle ./drizzle
+COPY --from=builder /app/scripts ./scripts
+
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["sh", "-c", "npx tsx scripts/migrate.ts && npm start"]
