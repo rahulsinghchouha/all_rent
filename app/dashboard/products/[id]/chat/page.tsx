@@ -1,16 +1,3 @@
-/**
- * Chat Page Component
- * 
- * Features:
- * - Owner views list of users who inquired about their product
- * - Click on a user to open their conversation
- * - Send/receive messages with inquiring users
- * - Each user has their own chat thread with message history
- * - Shows user online/offline status and response rate
- * 
- * Frontend only - uses mock data for 3 dummy users and message threads
- */
-
 "use client";
 
 import Link from "next/link";
@@ -18,159 +5,50 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { socket } from "@/app/lib/socket";
 
-type Message = {
+type MessageRow = {
   id: string;
-  sender: "owner" | "renter";
-  text: string;
-  time: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  messageType: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
-type ChatUser = {
+type UserSummary = {
   id: string;
-  name: string;
-  avatar: string;
-  status: "online" | "offline";
-  lastMessage: string;
-  lastMessageTime: string;
-  responseRate: number;
+  userName?: string;
+  email?: string;
 };
 
-// Mock data: 3 users who inquired about the product
-const dummyUsers: ChatUser[] = [
-  {
-    id: "user1",
-    name: "Sarah Johnson",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&q=80",
-    status: "online",
-    lastMessage: "Does it work with all devices?",
-    lastMessageTime: "2 min ago",
-    responseRate: 95,
-  },
-  {
-    id: "user2",
-    name: "Alex Chen",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&q=80",
-    status: "online",
-    lastMessage: "Can I book for next weekend?",
-    lastMessageTime: "15 min ago",
-    responseRate: 100,
-  },
-  {
-    id: "user3",
-    name: "Maria Garcia",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&q=80",
-    status: "offline",
-    lastMessage: "Thanks for the quick response!",
-    lastMessageTime: "1 hour ago",
-    responseRate: 88,
-  },
-];
+const formatTime = (value: string) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
 
-// Mock message threads for each user - indexed by user ID
-const chatMessages: Record<string, Message[]> = {
-  user1: [
-    {
-      id: "1",
-      sender: "renter",
-      text: "Hello! Is this product still available?",
-      time: "9:15 AM",
-    },
-    {
-      id: "2",
-      sender: "owner",
-      text: "Yes, absolutely! It's in great condition.",
-      time: "9:20 AM",
-    },
-    {
-      id: "3",
-      sender: "renter",
-      text: "Does it work with all devices?",
-      time: "9:22 AM",
-    },
-  ],
-  user2: [
-    {
-      id: "1",
-      sender: "renter",
-      text: "Hi! Love your product listing!",
-      time: "10:00 AM",
-    },
-    {
-      id: "2",
-      sender: "owner",
-      text: "Thank you! Happy to help with any questions.",
-      time: "10:05 AM",
-    },
-    {
-      id: "3",
-      sender: "renter",
-      text: "Can I book for next weekend?",
-      time: "10:10 AM",
-    },
-    {
-      id: "4",
-      sender: "owner",
-      text: "Yes, next weekend is available! When exactly?",
-      time: "10:12 AM",
-    },
-  ],
-  user3: [
-    {
-      id: "1",
-      sender: "renter",
-      text: "Hi, interested in renting this!",
-      time: "8:30 AM",
-    },
-    {
-      id: "2",
-      sender: "owner",
-      text: "Great! Let me know the dates you need.",
-      time: "8:35 AM",
-    },
-    {
-      id: "3",
-      sender: "renter",
-      text: "May 25-27 would work for me",
-      time: "8:40 AM",
-    },
-    {
-      id: "4",
-      sender: "owner",
-      text: "Perfect! That's available.",
-      time: "8:42 AM",
-    },
-    {
-      id: "5",
-      sender: "renter",
-      text: "Thanks for the quick response!",
-      time: "8:45 AM",
-    },
-  ],
-  owner: [
-    {
-      id: "owner-1",
-      sender: "owner",
-      text: "Hi! This item is available. Let me know the dates you need and I can confirm.",
-      time: "9:00 AM",
-    },
-    {
-      id: "owner-2",
-      sender: "renter",
-      text: "I’m interested in renting this item.",
-      time: "9:02 AM",
-    },
-  ],
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 export default function ChatPage() {
   const params = useParams();
-  const productId = params?.id as string;
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [draft, setDraft] = useState("");
-  const [showSummary, setShowSummary] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const productId = typeof params?.id === "string" ? params.id : "";
+  const [currentUser, setCurrentUser] = useState<UserSummary | null>(null);
   const [productOwnerId, setProductOwnerId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<Array<{
+    id: string;
+    userOneId: string;
+    userTwoId: string;
+    otherUserId: string;
+    otherUser?: { id: string; userName?: string; email?: string; isOnline?: boolean; isTyping?: boolean; lastSeenAt?: string | null } | null;
+  }>>([]);
+  const [messages, setMessages] = useState<MessageRow[]>([]);
+  const [draft, setDraft] = useState("");
+  const [typingUserId, setTypingUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -178,9 +56,9 @@ export default function ChatPage() {
       try {
         const response = await fetch("/api/auth/me", { credentials: "include" });
         const result = await response.json();
-        setCurrentUserId(result?.data?.id ?? null);
+        setCurrentUser(result?.data ?? null);
       } catch {
-        setCurrentUserId(null);
+        setCurrentUser(null);
       }
     }
 
@@ -195,8 +73,7 @@ export default function ChatPage() {
         setLoading(true);
         const response = await fetch(`/api/products/${productId}`, { credentials: "include" });
         const result = await response.json();
-        const product = result?.data ?? null;
-        setProductOwnerId(product?.ownerId ?? null);
+        setProductOwnerId(result?.data?.ownerId ?? null);
       } catch (error) {
         console.error("Failed to load product owner", error);
         setProductOwnerId(null);
@@ -209,23 +86,138 @@ export default function ChatPage() {
   }, [productId]);
 
   useEffect(() => {
-    if (!currentUserId || !productOwnerId || currentUserId === productOwnerId) return;
+    if (!currentUser || !productId || !productOwnerId) {
+      return;
+    }
 
-    setSelectedUserId("owner");
-    setMessages(chatMessages.owner || []);
-    setDraft("");
-  }, [currentUserId, productOwnerId]);
+    if (currentUser.id === productOwnerId) {
+      let ignore = false;
 
-  // Socket.IO connection setup
+      async function loadConversations() {
+        try {
+          const response = await fetch("/api/conversations", {
+            credentials: "include",
+          });
+          const result = await response.json();
+
+          if (!ignore) {
+            const nextConversations = result?.data ?? [];
+            setConversations(nextConversations);
+
+            if (!conversationId && nextConversations.length > 0) {
+              setConversationId(nextConversations[0].id);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to load owner conversations", error);
+        }
+      }
+
+      loadConversations();
+
+      return () => {
+        ignore = true;
+      };
+    }
+
+    let ignore = false;
+
+    async function ensureConversation() {
+      try {
+        const response = await fetch("/api/conversations", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ productId }),
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result?.data?.id) {
+          return;
+        }
+
+        if (!ignore) {
+          setConversationId(result.data.id);
+        }
+      } catch (error) {
+        console.error("Failed to create conversation", error);
+      }
+    }
+
+    ensureConversation();
+
+    return () => {
+      ignore = true;
+    };
+  }, [currentUser, productId, productOwnerId, conversationId]);
+
+  useEffect(() => {
+    const activeConversationId = conversationId;
+    if (!activeConversationId) return;
+
+    let ignore = false;
+
+    async function loadMessages() {
+      try {
+        const response = await fetch(`/api/conversations/${activeConversationId}/messages`, {
+          credentials: "include",
+        });
+        const result = await response.json();
+        if (!ignore) {
+          setMessages(result?.data ?? []);
+        }
+      } catch (error) {
+        console.error("Failed to load conversation messages", error);
+      }
+    }
+
+    loadMessages();
+
+    socket.connect();
+    socket.emit("join_conversation", activeConversationId);
+
+    const handleIncomingMessage = (message: MessageRow) => {
+      if (message.conversationId !== activeConversationId) {
+        return;
+      }
+
+      setMessages((current) => {
+        const exists = current.some((item) => item.id === message.id);
+        return exists ? current : [...current, message];
+      });
+    };
+
+    const handleTypingStatus = (payload: { conversationId?: string; userId?: string; isTyping?: boolean }) => {
+      if (payload.conversationId !== activeConversationId) {
+        return;
+      }
+
+      if (payload.userId && payload.userId !== currentUser?.id) {
+        setTypingUserId(payload.isTyping ? payload.userId : null);
+      }
+    };
+
+    socket.on("new_message", handleIncomingMessage);
+    socket.on("typing_status", handleTypingStatus);
+
+    return () => {
+      ignore = true;
+      socket.off("new_message", handleIncomingMessage);
+      socket.off("typing_status", handleTypingStatus);
+    };
+  }, [conversationId, currentUser?.id]);
+
   useEffect(() => {
     socket.connect();
 
     socket.on("connect", () => {
-      console.log("✅ Socket connected:", socket.id);
+      console.log("Socket connected", socket.id);
     });
 
     socket.on("connect_error", (error) => {
-      console.error("❌ Socket connection error:", error.message);
+      console.error("Socket connection error", error.message);
     });
 
     return () => {
@@ -235,48 +227,25 @@ export default function ChatPage() {
     };
   }, []);
 
-  const handleSelectUser = (userId: string) => {
-    setSelectedUserId(userId);
-    setMessages(chatMessages[userId] || []);
-    setDraft("");
-  };
+  const emitTypingStatus = (isTyping: boolean) => {
+    if (!conversationId) return;
 
-  const handleBackToUserList = () => {
-    setSelectedUserId(null);
-    setDraft("");
-  };
-
-  const isOwnerViewingInquiries = Boolean(currentUserId && productOwnerId && currentUserId === productOwnerId);
-  const selectedUser = dummyUsers.find((u) => u.id === selectedUserId) ?? {
-    id: "owner",
-    name: "Owner",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&q=80",
-    status: "online" as const,
-    lastMessage: "Product owner",
-    lastMessageTime: "Now",
-    responseRate: 100,
+    socket.emit("typing_status", {
+      conversationId,
+      isTyping,
+    });
   };
 
   const sendMessage = () => {
+    const activeConversationId = conversationId;
     const trimmed = draft.trim();
-    if (!trimmed) return;
+    if (!trimmed || !activeConversationId) {
+      return;
+    }
 
-    const sender = isOwnerViewingInquiries ? "owner" : "renter";
-
-    setMessages((current) => [
-      ...current,
-      {
-        id: `${current.length + 1}`,
-        sender,
-        text: trimmed,
-        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      },
-    ]);
-
-    console.log("trimmed message to send", trimmed);
-
+    emitTypingStatus(false);
     socket.emit("send_message", {
-      productId,
+      conversationId: activeConversationId,
       content: trimmed,
     });
 
@@ -290,357 +259,228 @@ export default function ChatPage() {
     }
   };
 
+  const selectedConversation = conversations.find((conversation) => conversation.id === conversationId) ?? conversations[0] ?? null;
+  const selectedUserName = selectedConversation?.otherUser?.userName || selectedConversation?.otherUser?.email || "Requested user";
+  const otherUser = selectedConversation?.otherUser ?? null;
+  const otherUserIsOnline = Boolean(otherUser?.isOnline);
+  const otherUserIsTyping = Boolean(otherUser?.isTyping || typingUserId);
+
+  const isOwnerViewingInquiries = Boolean(currentUser && productOwnerId && currentUser.id === productOwnerId);
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-slate-700">Loading chat...</div>;
   }
 
-  if (selectedUserId && selectedUser) {
+  if (isOwnerViewingInquiries) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mb-6 flex flex-col gap-4 rounded-[32px] border border-slate-200 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:py-6">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleBackToUserList}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-3xl border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
-                </svg>
-              </button>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Inquiry from</p>
-                <h1 className="text-2xl font-bold text-slate-900">Chat with {selectedUser.name}</h1>
-                <p className="text-sm text-slate-500">{selectedUser.responseRate}% response rate</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:block flex-col gap-2 rounded-3xl bg-slate-50 px-4 py-3 text-sm shadow-sm sm:text-right">
-                <span className="text-xs uppercase tracking-[0.24em] text-slate-400">Status</span>
-                <span className="inline-flex items-center gap-2 font-semibold text-slate-900">
-                  <span className={`h-2.5 w-2.5 rounded-full ${selectedUser.status === "online" ? "bg-emerald-500" : "bg-slate-400"}`} />
-                  {selectedUser.status === "online" ? "Online" : "Offline"}
-                </span>
-              </div>
-              <button
-                onClick={() => setShowSummary((s) => !s)}
-                className="sm:hidden inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-sm font-semibold shadow-sm"
-              >
-                {showSummary ? "Hide" : "Summary"}
-              </button>
-            </div>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
-            <section className="rounded-[32px] border border-slate-200 bg-white shadow-sm overflow-hidden">
-              <div className="border-b border-slate-200 bg-slate-50 px-6 py-5 sm:px-7">
-                <div className="flex items-center gap-4">
-                  <div className="relative h-14 w-14 overflow-hidden rounded-3xl bg-slate-200">
-                    <img
-                      src={selectedUser.avatar}
-                      alt={selectedUser.name}
-                      className="h-full w-full object-cover"
-                    />
-                    <span className={`absolute bottom-2 right-2 h-3.5 w-3.5 rounded-full border-2 border-white ${selectedUser.status === "online" ? "bg-emerald-500" : "bg-slate-400"}`} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{selectedUser.name}</p>
-                    <p className="text-xs text-slate-500">{selectedUser.responseRate}% response rate • {selectedUser.status === "online" ? "Active now" : "Inactive"}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex min-h-[360px] sm:min-h-[520px] flex-col overflow-hidden bg-slate-50">
-                <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-7 sm:py-6">
-                  <div className="space-y-4">
-                    {messages.map((message) => {
-                      const isOwner = message.sender === "owner";
-                      return (
-                        <div
-                          key={message.id}
-                          className={`flex ${isOwner ? "justify-end" : "justify-start"}`}
-                        >
-                          <div className={`max-w-[85%] rounded-[28px] p-4 shadow-sm ${isOwner
-                            ? "bg-primary text-white rounded-br-[4px] rounded-tl-[28px] rounded-tr-[28px] rounded-bl-[28px]"
-                            : "bg-white text-slate-900 rounded-bl-[4px] rounded-tr-[28px] rounded-tl-[28px] rounded-br-[28px]"
-                            }`}>
-                            <p className="text-sm leading-6">{message.text}</p>
-                            <div className={`mt-2 text-[11px] ${isOwner ? "text-white/70" : "text-slate-400"}`}>
-                              {message.time}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                    <label htmlFor="chat-input" className="sr-only">
-                      Write a message
-                    </label>
-                    <textarea
-                      id="chat-input"
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Type your message..."
-                      rows={2}
-                      className="min-h-[72px] w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10 touch-manipulation"
-                    />
-                    <button
-                      type="button"
-                      onClick={sendMessage}
-                      className="inline-flex h-12 shrink-0 items-center justify-center rounded-3xl bg-primary px-5 text-sm font-semibold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition"
-                    >
-                      Send
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <aside className={`${showSummary ? "block" : "hidden"} sm:block space-y-5 transition-all`}>
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Inquiry Details</h2>
-                <div className="mt-4 space-y-3 text-sm text-slate-600">
-                  <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
-                    <span>Customer</span>
-                    <span className="font-semibold text-slate-900">{selectedUser.name}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
-                    <span>Status</span>
-                    <span className="font-semibold text-slate-900 capitalize">{selectedUser.status}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
-                    <span>Response Rate</span>
-                    <span className="font-semibold text-slate-900">{selectedUser.responseRate}%</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
-                    <span>Last Message</span>
-                    <span className="font-semibold text-slate-900">{selectedUser.lastMessageTime}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Pro tip</h2>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  Respond quickly to increase chances of booking. Share additional details, availability, and pricing to help customers decide.
-                </p>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isOwnerViewingInquiries) {
-    return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mb-6 flex flex-col gap-4 rounded-[32px] border border-slate-200 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:py-6">
+          <div className="mb-6 flex items-center justify-between rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
             <div className="flex items-center gap-4">
               <Link
                 href={`/dashboard/products/${productId}`}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-3xl border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 text-slate-600"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
-                </svg>
+                ←
               </Link>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Inquiry from</p>
-                <h1 className="text-2xl font-bold text-slate-900">Chat with {selectedUser.name}</h1>
-                <p className="text-sm text-slate-500">{selectedUser.responseRate}% response rate</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:block flex-col gap-2 rounded-3xl bg-slate-50 px-4 py-3 text-sm shadow-sm sm:text-right">
-                <span className="text-xs uppercase tracking-[0.24em] text-slate-400">Status</span>
-                <span className="inline-flex items-center gap-2 font-semibold text-slate-900">
-                  <span className={`h-2.5 w-2.5 rounded-full ${selectedUser.status === "online" ? "bg-emerald-500" : "bg-slate-400"}`} />
-                  {selectedUser.status === "online" ? "Online" : "Offline"}
-                </span>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Inquiries</p>
+                <h1 className="text-xl font-bold text-slate-900">Owner conversations</h1>
               </div>
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
-            <section className="rounded-[32px] border border-slate-200 bg-white shadow-sm overflow-hidden">
-              <div className="border-b border-slate-200 bg-slate-50 px-6 py-5 sm:px-7">
-                <div className="flex items-center gap-4">
-                  <div className="relative h-14 w-14 overflow-hidden rounded-3xl bg-slate-200">
-                    <img
-                      src={selectedUser.avatar}
-                      alt={selectedUser.name}
-                      className="h-full w-full object-cover"
-                    />
-                    <span className={`absolute bottom-2 right-2 h-3.5 w-3.5 rounded-full border-2 border-white ${selectedUser.status === "online" ? "bg-emerald-500" : "bg-slate-400"}`} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{selectedUser.name}</p>
-                    <p className="text-xs text-slate-500">{selectedUser.responseRate}% response rate • {selectedUser.status === "online" ? "Active now" : "Inactive"}</p>
-                  </div>
+          <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+            <aside className="rounded-[28px] border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="mb-3 px-3 pt-2 text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Requested users</div>
+              {conversations.length === 0 ? (
+                <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">
+                  No inquiries yet.
+                </div>
+              ) : (
+                conversations.map((conversation) => {
+                  const userName = conversation.otherUser?.userName || conversation.otherUser?.email || "Requested user";
+                  const isActive = conversation.id === selectedConversation?.id;
+
+                  return (
+                    <button
+                      key={conversation.id}
+                      type="button"
+                      onClick={() => setConversationId(conversation.id)}
+                      className={`w-full rounded-2xl border px-3 py-3 text-left transition ${
+                        isActive
+                          ? "border-slate-900 bg-slate-900 text-white"
+                          : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="text-sm font-semibold">{userName}</div>
+                      <div className={`mt-1 text-xs ${isActive ? "text-slate-200" : "text-slate-500"}`}>
+                        Conversation started
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </aside>
+
+            <div className="rounded-[28px] border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Request</div>
+                <div className="mt-2 flex items-center gap-3">
+                  <h2 className="text-xl font-bold text-slate-900">{selectedUserName}</h2>
+                  <span className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                    otherUserIsOnline ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"
+                  }`}>
+                    <span className={`h-2 w-2 rounded-full ${otherUserIsOnline ? "bg-emerald-500" : "bg-slate-400"}`} />
+                    {otherUserIsTyping ? "Typing..." : otherUserIsOnline ? "Online" : "Offline"}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex min-h-[360px] sm:min-h-[520px] flex-col overflow-hidden bg-slate-50">
-                <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-7 sm:py-6">
-                  <div className="space-y-4">
-                    {messages.map((message) => {
-                      const isOwner = message.sender === "owner";
+              <div className="max-h-[560px] min-h-[420px] overflow-y-auto bg-slate-50 px-4 py-5 sm:px-6">
+                <div className="space-y-4">
+                  {messages.length === 0 ? (
+                    <div className="rounded-3xl bg-white p-4 text-sm text-slate-500 shadow-sm">
+                      No messages yet for this request.
+                    </div>
+                  ) : (
+                    messages.map((message) => {
+                      const isMine = message.senderId === currentUser?.id;
+
                       return (
                         <div
                           key={message.id}
-                          className={`flex ${isOwner ? "justify-end" : "justify-start"}`}
+                          className={`flex ${isMine ? "justify-end" : "justify-start"}`}
                         >
-                          <div className={`max-w-[85%] rounded-[28px] p-4 shadow-sm ${isOwner
-                            ? "bg-primary text-white rounded-br-[4px] rounded-tl-[28px] rounded-tr-[28px] rounded-bl-[28px]"
-                            : "bg-white text-slate-900 rounded-bl-[4px] rounded-tr-[28px] rounded-tl-[28px] rounded-br-[28px]"
-                            }`}>
-                            <p className="text-sm leading-6">{message.text}</p>
-                            <div className={`mt-2 text-[11px] ${isOwner ? "text-white/70" : "text-slate-400"}`}>
-                              {message.time}
+                          <div
+                            className={`max-w-[82%] rounded-[26px] px-4 py-3 shadow-sm ${
+                              isMine
+                                ? "bg-slate-900 text-white"
+                                : "bg-white text-slate-900"
+                            }`}
+                          >
+                            <p className="text-sm leading-6">{message.content}</p>
+                            <div
+                              className={`mt-2 text-[11px] ${
+                                isMine ? "text-slate-300" : "text-slate-400"
+                              }`}
+                            >
+                              {formatTime(message.createdAt)}
                             </div>
                           </div>
                         </div>
                       );
-                    })}
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                    <label htmlFor="chat-input" className="sr-only">
-                      Write a message
-                    </label>
-                    <textarea
-                      id="chat-input"
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" && !event.shiftKey) {
-                          event.preventDefault();
-                          sendMessage();
-                        }
-                      }}
-                      placeholder="Type your message..."
-                      rows={2}
-                      className="min-h-[72px] w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10 touch-manipulation"
-                    />
-                    <button
-                      type="button"
-                      onClick={sendMessage}
-                      className="inline-flex h-12 shrink-0 items-center justify-center rounded-3xl bg-primary px-5 text-sm font-semibold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition"
-                    >
-                      Send
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <aside className="space-y-5 transition-all">
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Inquiry Details</h2>
-                <div className="mt-4 space-y-3 text-sm text-slate-600">
-                  <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
-                    <span>Customer</span>
-                    <span className="font-semibold text-slate-900">{selectedUser.name}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
-                    <span>Status</span>
-                    <span className="font-semibold text-slate-900 capitalize">{selectedUser.status}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
-                    <span>Response Rate</span>
-                    <span className="font-semibold text-slate-900">{selectedUser.responseRate}%</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
-                    <span>Last Message</span>
-                    <span className="font-semibold text-slate-900">{selectedUser.lastMessageTime}</span>
-                  </div>
+                    })
+                  )}
                 </div>
               </div>
 
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Pro tip</h2>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  Respond quickly to increase chances of booking. Share additional details, availability, and pricing to help customers decide.
-                </p>
+              <div className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
+                <div className="flex gap-3">
+                  <textarea
+                    value={draft}
+                    onChange={(event) => {
+                      setDraft(event.target.value);
+                      emitTypingStatus(event.target.value.trim().length > 0);
+                    }}
+                    onBlur={() => emitTypingStatus(false)}
+                    onKeyDown={handleKeyDown}
+                    rows={2}
+                    placeholder="Reply to this inquiry..."
+                    className="min-h-[72px] w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={sendMessage}
+                    className="inline-flex h-[72px] items-center justify-center rounded-3xl bg-slate-900 px-5 text-sm font-semibold text-white"
+                  >
+                    Send
+                  </button>
+                </div>
               </div>
-            </aside>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // Show users list if the current user is the owner of the product.
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-center gap-4">
-          <Link
-            href={`/dashboard/products/${productId}`}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-3xl border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
-            </svg>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Product Inquiries</h1>
-            <p className="text-sm text-slate-500">You have {dummyUsers.length} pending inquiries</p>
+        <div className="mb-6 flex items-center justify-between rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/dashboard/products/${productId}`}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 text-slate-600"
+            >
+              ←
+            </Link>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Conversation</p>
+              <h1 className="text-xl font-bold text-slate-900">Product owner</h1>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-3">
-          {dummyUsers.map((user) => (
-            <button
-              key={user.id}
-              onClick={() => handleSelectUser(user.id)}
-              className="w-full rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm transition hover:border-primary hover:shadow-md hover:bg-slate-50"
-            >
-              <div className="flex items-center gap-4">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-3xl bg-slate-200">
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className="h-full w-full object-cover"
-                  />
-                  <span className={`absolute bottom-2 right-2 h-3 w-3 rounded-full border-2 border-white ${user.status === "online" ? "bg-emerald-500" : "bg-slate-400"}`} />
+        <div className="rounded-[32px] border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="max-h-[560px] min-h-[420px] overflow-y-auto bg-slate-50 px-4 py-5 sm:px-6">
+            <div className="space-y-4">
+              {messages.length === 0 ? (
+                <div className="rounded-3xl bg-white p-4 text-sm text-slate-500 shadow-sm">
+                  No messages yet. Send the first message to start the conversation.
                 </div>
+              ) : (
+                messages.map((message) => {
+                  const isMine = message.senderId === currentUser?.id;
 
-                <div className="flex-1 text-left">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold text-slate-900">{user.name}</h3>
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${user.status === "online"
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-slate-100 text-slate-600"
-                      }`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${user.status === "online" ? "bg-emerald-500" : "bg-slate-400"}`} />
-                      {user.status === "online" ? "Online" : "Offline"}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-600 line-clamp-1">{user.lastMessage}</p>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="text-xs text-slate-500">{user.lastMessageTime}</span>
-                    <span className="text-xs font-medium text-slate-600">{user.responseRate}% response rate</span>
-                  </div>
-                </div>
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[82%] rounded-[26px] px-4 py-3 shadow-sm ${
+                          isMine
+                            ? "bg-slate-900 text-white"
+                            : "bg-white text-slate-900"
+                        }`}
+                      >
+                        <p className="text-sm leading-6">{message.content}</p>
+                        <div
+                          className={`mt-2 text-[11px] ${
+                            isMine ? "text-slate-300" : "text-slate-400"
+                          }`}
+                        >
+                          {formatTime(message.createdAt)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
 
-                <div className="shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5 text-slate-400">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </div>
-            </button>
-          ))}
+          <div className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
+            <div className="flex gap-3">
+              <textarea
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={handleKeyDown}
+                rows={2}
+                placeholder="Type a message..."
+                className="min-h-[72px] w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={sendMessage}
+                className="inline-flex h-[72px] items-center justify-center rounded-3xl bg-slate-900 px-5 text-sm font-semibold text-white"
+              >
+                Send
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
