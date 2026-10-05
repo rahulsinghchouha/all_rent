@@ -28,9 +28,6 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (res.ok) {
-                if (data.accessToken) {
-                    localStorage.setItem("accessToken", data.accessToken);
-                }
                 console.log("Login successful:", data);
                 window.location.assign("/dashboard");
             } else {

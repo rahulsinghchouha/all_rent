@@ -14,6 +14,22 @@ export interface AuthPayload {
     id: string;
     userName: string;
     email: string;
+    iat?: number;
+    exp?: number;
+}
+
+function normalizeAuthPayload(payload: Partial<AuthPayload>): AuthPayload {
+    const { id, userName, email } = payload;
+
+    if (!id || !userName || !email) {
+        throw new Error("Invalid auth payload");
+    }
+
+    return {
+        id,
+        userName,
+        email,
+    };
 }
 
 export async function createUserService(userData: Pick<InsertUser, "userName" | "email"> & { password: string }) {
@@ -81,14 +97,14 @@ export async function loginUserService(email: string, password: string) {
     };
 }
 
-export function createAccessToken(payload: AuthPayload) {
-    return jwt.sign(payload, ACCESS_TOKEN_SECRET, {
+export function createAccessToken(payload: Partial<AuthPayload>) {
+    return jwt.sign(normalizeAuthPayload(payload), ACCESS_TOKEN_SECRET, {
         expiresIn: ACCESS_TOKEN_EXPIRES_IN,
     });
 }
 
-export function createRefreshToken(payload: AuthPayload) {
-    return jwt.sign(payload, REFRESH_TOKEN_SECRET, {
+export function createRefreshToken(payload: Partial<AuthPayload>) {
+    return jwt.sign(normalizeAuthPayload(payload), REFRESH_TOKEN_SECRET, {
         expiresIn: REFRESH_TOKEN_EXPIRES_IN,
     });
 }

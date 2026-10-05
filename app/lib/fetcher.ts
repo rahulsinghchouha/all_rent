@@ -11,43 +11,29 @@ export async function refreshAccessToken() {
     throw new Error("Unable to refresh access token");
   }
 
-  const data = await response.json();
-  if (data.accessToken) {
-    localStorage.setItem("accessToken", data.accessToken);
-    return data.accessToken as string;
-  }
-
-  throw new Error("No access token returned from refresh");
+  return response;
 }
 
 export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}) {
-  const token = localStorage.getItem("accessToken");
-  const headers = new Headers(init.headers ?? {});
-
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  const response = await fetch(input, {
+  const requestInit: RequestInit = {
     ...init,
-    headers,
-    credentials: init.credentials ?? "same-origin",
-  });
+    credentials: init.credentials ?? "include",
+    headers: new Headers(init.headers ?? {}),
+  };
 
-  if (response.status === 401) {
-    try {
-      const newToken = await refreshAccessToken();
-      headers.set("Authorization", `Bearer ${newToken}`);
+  const response = await fetch(input, requestInit);
 
-      return fetch(input, {
-        ...init,
-        headers,
-        credentials: init.credentials ?? "same-origin",
-      });
-    } catch (error) {
-      return response;
-    }
+  if (response.status !== 401) {
+    return response;
   }
 
-  return response;
+  try {
+    await refreshAccessToken();
+    return fetch(input, {
+      ...requestInit,
+      headers: new Headers(requestInit.headers ?? {}),
+    });
+  } catch {
+    return response;
+  }
 }

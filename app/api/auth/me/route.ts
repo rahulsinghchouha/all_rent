@@ -1,19 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { verifyAccessToken, verifyRefreshToken } from "@/app/services/auth";
+import { verifyAccessToken, verifyRefreshToken, createAccessToken, createRefreshToken, type AuthPayload } from "@/app/services/auth";
 import { db } from "@/app/utils/dbConnect";
 import { users } from "@/app/tables/usersTable";
 import { eq } from "drizzle-orm";
 
+const isProduction = process.env.NODE_ENV === "production";
+
+function setAuthCookies(response: NextResponse, payload: AuthPayload) {
+  const accessToken = createAccessToken(payload);
+  const refreshToken = createRefreshToken(payload);
+
+  response.cookies.set("accessToken", accessToken, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 15 * 60,
+  });
+
+  response.cookies.set("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60,
+  });
+}
+
 async function getAuthPayload(req: NextRequest) {
+  let usedRefreshToken = false;
+
   const authHeader = req.headers.get("authorization") ?? "";
   const headerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
   if (headerToken) {
     try {
-      return verifyAccessToken(headerToken);
+      return { payload: verifyAccessToken(headerToken), usedRefreshToken: false };
     } catch {
-      // fall through
+      // fall through to cookie validation
     }
   }
 
@@ -21,7 +46,7 @@ async function getAuthPayload(req: NextRequest) {
   const accessToken = cookieStore.get("accessToken")?.value;
   if (accessToken) {
     try {
-      return verifyAccessToken(accessToken);
+      return { payload: verifyAccessToken(accessToken), usedRefreshToken: false };
     } catch {
       // fall through to refresh
     }
@@ -32,12 +57,13 @@ async function getAuthPayload(req: NextRequest) {
     throw new Error("Missing access token");
   }
 
-  return verifyRefreshToken(refreshToken);
+  usedRefreshToken = true;
+  return { payload: verifyRefreshToken(refreshToken), usedRefreshToken };
 }
 
 export async function GET(req: NextRequest) {
   try {
-    const payload = await getAuthPayload(req);
+    const { payload, usedRefreshToken } = await getAuthPayload(req);
 
     const [user] = await db
       .select({
@@ -56,7 +82,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ data: user }, { status: 200 });
+    const response = NextResponse.json({ data: user }, { status: 200 });
+
+    if (usedRefreshToken) {
+      setAuthCookies(response, {
+        id: payload.id,
+        userName: payload.userName,
+        email: payload.email,
+      });
+    }
+
+    return response;
   } catch (error: unknown) {
     console.error("🔴 GET ME ERROR:", error instanceof Error ? error.message : String(error));
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

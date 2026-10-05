@@ -16,6 +16,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { socket } from "@/app/lib/socket";
 
 type Message = {
   id: string;
@@ -215,6 +216,25 @@ export default function ChatPage() {
     setDraft("");
   }, [currentUserId, productOwnerId]);
 
+  // Socket.IO connection setup
+  useEffect(() => {
+    socket.connect();
+
+    socket.on("connect", () => {
+      console.log("✅ Socket connected:", socket.id);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.error("❌ Socket connection error:", error.message);
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("connect_error");
+      socket.disconnect();
+    };
+  }, []);
+
   const handleSelectUser = (userId: string) => {
     setSelectedUserId(userId);
     setMessages(chatMessages[userId] || []);
@@ -252,6 +272,14 @@ export default function ChatPage() {
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       },
     ]);
+
+    console.log("trimmed message to send", trimmed);
+
+    socket.emit("send_message", {
+      productId,
+      content: trimmed,
+    });
+
     setDraft("");
   };
 
@@ -332,11 +360,10 @@ export default function ChatPage() {
                           key={message.id}
                           className={`flex ${isOwner ? "justify-end" : "justify-start"}`}
                         >
-                          <div className={`max-w-[85%] rounded-[28px] p-4 shadow-sm ${
-                            isOwner
-                              ? "bg-primary text-white rounded-br-[4px] rounded-tl-[28px] rounded-tr-[28px] rounded-bl-[28px]"
-                              : "bg-white text-slate-900 rounded-bl-[4px] rounded-tr-[28px] rounded-tl-[28px] rounded-br-[28px]"
-                          }`}>
+                          <div className={`max-w-[85%] rounded-[28px] p-4 shadow-sm ${isOwner
+                            ? "bg-primary text-white rounded-br-[4px] rounded-tl-[28px] rounded-tr-[28px] rounded-bl-[28px]"
+                            : "bg-white text-slate-900 rounded-bl-[4px] rounded-tr-[28px] rounded-tl-[28px] rounded-br-[28px]"
+                            }`}>
                             <p className="text-sm leading-6">{message.text}</p>
                             <div className={`mt-2 text-[11px] ${isOwner ? "text-white/70" : "text-slate-400"}`}>
                               {message.time}
@@ -470,11 +497,10 @@ export default function ChatPage() {
                           key={message.id}
                           className={`flex ${isOwner ? "justify-end" : "justify-start"}`}
                         >
-                          <div className={`max-w-[85%] rounded-[28px] p-4 shadow-sm ${
-                            isOwner
-                              ? "bg-primary text-white rounded-br-[4px] rounded-tl-[28px] rounded-tr-[28px] rounded-bl-[28px]"
-                              : "bg-white text-slate-900 rounded-bl-[4px] rounded-tr-[28px] rounded-tl-[28px] rounded-br-[28px]"
-                          }`}>
+                          <div className={`max-w-[85%] rounded-[28px] p-4 shadow-sm ${isOwner
+                            ? "bg-primary text-white rounded-br-[4px] rounded-tl-[28px] rounded-tr-[28px] rounded-bl-[28px]"
+                            : "bg-white text-slate-900 rounded-bl-[4px] rounded-tr-[28px] rounded-tl-[28px] rounded-br-[28px]"
+                            }`}>
                             <p className="text-sm leading-6">{message.text}</p>
                             <div className={`mt-2 text-[11px] ${isOwner ? "text-white/70" : "text-slate-400"}`}>
                               {message.time}
@@ -592,11 +618,10 @@ export default function ChatPage() {
                 <div className="flex-1 text-left">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="font-semibold text-slate-900">{user.name}</h3>
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
-                      user.status === "online"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-slate-100 text-slate-600"
-                    }`}>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${user.status === "online"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-slate-100 text-slate-600"
+                      }`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${user.status === "online" ? "bg-emerald-500" : "bg-slate-400"}`} />
                       {user.status === "online" ? "Online" : "Offline"}
                     </span>
