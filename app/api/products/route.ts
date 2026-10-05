@@ -55,10 +55,11 @@ export async function GET(req: Request) {
     const products = await getProductsService({
       status,
       ownerId: ownerId || undefined,
-      excludeOwnerId: ownerId ? undefined : excludeOwnerId || user.id,
       category: category || undefined,
       limit,
     });
+
+    console.log("Fetched products:", products);
 
     return NextResponse.json({ data: products }, { status: 200 });
   } catch (error) {

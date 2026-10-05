@@ -14,7 +14,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 type Message = {
@@ -145,6 +145,20 @@ const chatMessages: Record<string, Message[]> = {
       time: "8:45 AM",
     },
   ],
+  owner: [
+    {
+      id: "owner-1",
+      sender: "owner",
+      text: "Hi! This item is available. Let me know the dates you need and I can confirm.",
+      time: "9:00 AM",
+    },
+    {
+      id: "owner-2",
+      sender: "renter",
+      text: "I’m interested in renting this item.",
+      time: "9:02 AM",
+    },
+  ],
 };
 
 export default function ChatPage() {
@@ -154,6 +168,52 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [showSummary, setShowSummary] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [productOwnerId, setProductOwnerId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadCurrentUser() {
+      try {
+        const response = await fetch("/api/auth/me", { credentials: "include" });
+        const result = await response.json();
+        setCurrentUserId(result?.data?.id ?? null);
+      } catch {
+        setCurrentUserId(null);
+      }
+    }
+
+    loadCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (!productId) return;
+
+    async function loadProduct() {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/products/${productId}`, { credentials: "include" });
+        const result = await response.json();
+        const product = result?.data ?? null;
+        setProductOwnerId(product?.ownerId ?? null);
+      } catch (error) {
+        console.error("Failed to load product owner", error);
+        setProductOwnerId(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProduct();
+  }, [productId]);
+
+  useEffect(() => {
+    if (!currentUserId || !productOwnerId || currentUserId === productOwnerId) return;
+
+    setSelectedUserId("owner");
+    setMessages(chatMessages.owner || []);
+    setDraft("");
+  }, [currentUserId, productOwnerId]);
 
   const handleSelectUser = (userId: string) => {
     setSelectedUserId(userId);
@@ -166,17 +226,28 @@ export default function ChatPage() {
     setDraft("");
   };
 
-  const selectedUser = dummyUsers.find((u) => u.id === selectedUserId);
+  const isOwnerViewingInquiries = Boolean(currentUserId && productOwnerId && currentUserId === productOwnerId);
+  const selectedUser = dummyUsers.find((u) => u.id === selectedUserId) ?? {
+    id: "owner",
+    name: "Owner",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&q=80",
+    status: "online" as const,
+    lastMessage: "Product owner",
+    lastMessageTime: "Now",
+    responseRate: 100,
+  };
 
   const sendMessage = () => {
     const trimmed = draft.trim();
     if (!trimmed) return;
 
+    const sender = isOwnerViewingInquiries ? "owner" : "renter";
+
     setMessages((current) => [
       ...current,
       {
         id: `${current.length + 1}`,
-        sender: "owner",
+        sender,
         text: trimmed,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       },
@@ -191,7 +262,10 @@ export default function ChatPage() {
     }
   };
 
-  // Show chat interface if user is selected
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center text-slate-700">Loading chat...</div>;
+  }
+
   if (selectedUserId && selectedUser) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -336,8 +410,150 @@ export default function ChatPage() {
     );
   }
 
-  // Show users list if no user is selected
-  // Display all inquiries from users interested in this product
+  if (!isOwnerViewingInquiries) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mb-6 flex flex-col gap-4 rounded-[32px] border border-slate-200 bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:py-6">
+            <div className="flex items-center gap-4">
+              <Link
+                href={`/dashboard/products/${productId}`}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-3xl border border-slate-200 bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+                </svg>
+              </Link>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Inquiry from</p>
+                <h1 className="text-2xl font-bold text-slate-900">Chat with {selectedUser.name}</h1>
+                <p className="text-sm text-slate-500">{selectedUser.responseRate}% response rate</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:block flex-col gap-2 rounded-3xl bg-slate-50 px-4 py-3 text-sm shadow-sm sm:text-right">
+                <span className="text-xs uppercase tracking-[0.24em] text-slate-400">Status</span>
+                <span className="inline-flex items-center gap-2 font-semibold text-slate-900">
+                  <span className={`h-2.5 w-2.5 rounded-full ${selectedUser.status === "online" ? "bg-emerald-500" : "bg-slate-400"}`} />
+                  {selectedUser.status === "online" ? "Online" : "Offline"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
+            <section className="rounded-[32px] border border-slate-200 bg-white shadow-sm overflow-hidden">
+              <div className="border-b border-slate-200 bg-slate-50 px-6 py-5 sm:px-7">
+                <div className="flex items-center gap-4">
+                  <div className="relative h-14 w-14 overflow-hidden rounded-3xl bg-slate-200">
+                    <img
+                      src={selectedUser.avatar}
+                      alt={selectedUser.name}
+                      className="h-full w-full object-cover"
+                    />
+                    <span className={`absolute bottom-2 right-2 h-3.5 w-3.5 rounded-full border-2 border-white ${selectedUser.status === "online" ? "bg-emerald-500" : "bg-slate-400"}`} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{selectedUser.name}</p>
+                    <p className="text-xs text-slate-500">{selectedUser.responseRate}% response rate • {selectedUser.status === "online" ? "Active now" : "Inactive"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex min-h-[360px] sm:min-h-[520px] flex-col overflow-hidden bg-slate-50">
+                <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-7 sm:py-6">
+                  <div className="space-y-4">
+                    {messages.map((message) => {
+                      const isOwner = message.sender === "owner";
+                      return (
+                        <div
+                          key={message.id}
+                          className={`flex ${isOwner ? "justify-end" : "justify-start"}`}
+                        >
+                          <div className={`max-w-[85%] rounded-[28px] p-4 shadow-sm ${
+                            isOwner
+                              ? "bg-primary text-white rounded-br-[4px] rounded-tl-[28px] rounded-tr-[28px] rounded-bl-[28px]"
+                              : "bg-white text-slate-900 rounded-bl-[4px] rounded-tr-[28px] rounded-tl-[28px] rounded-br-[28px]"
+                          }`}>
+                            <p className="text-sm leading-6">{message.text}</p>
+                            <div className={`mt-2 text-[11px] ${isOwner ? "text-white/70" : "text-slate-400"}`}>
+                              {message.time}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <label htmlFor="chat-input" className="sr-only">
+                      Write a message
+                    </label>
+                    <textarea
+                      id="chat-input"
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                          event.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      placeholder="Type your message..."
+                      rows={2}
+                      className="min-h-[72px] w-full resize-none rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10 touch-manipulation"
+                    />
+                    <button
+                      type="button"
+                      onClick={sendMessage}
+                      className="inline-flex h-12 shrink-0 items-center justify-center rounded-3xl bg-primary px-5 text-sm font-semibold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition"
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <aside className="space-y-5 transition-all">
+              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Inquiry Details</h2>
+                <div className="mt-4 space-y-3 text-sm text-slate-600">
+                  <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
+                    <span>Customer</span>
+                    <span className="font-semibold text-slate-900">{selectedUser.name}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
+                    <span>Status</span>
+                    <span className="font-semibold text-slate-900 capitalize">{selectedUser.status}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
+                    <span>Response Rate</span>
+                    <span className="font-semibold text-slate-900">{selectedUser.responseRate}%</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-3xl bg-slate-50 px-4 py-3">
+                    <span>Last Message</span>
+                    <span className="font-semibold text-slate-900">{selectedUser.lastMessageTime}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Pro tip</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Respond quickly to increase chances of booking. Share additional details, availability, and pricing to help customers decide.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show users list if the current user is the owner of the product.
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">

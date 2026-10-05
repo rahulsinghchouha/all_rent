@@ -1,34 +1,9 @@
 services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:123456@db:5432/all_rent
-      - DEFAULT_OWNER_ID=${DEFAULT_OWNER_ID}
-      - MINIO_ENDPOINT=minio
-      - MINIO_PORT=9000
-      - MINIO_USE_SSL=false
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
-      - MINIO_BUCKET=rental-images
-      - MINIO_PUBLIC_URL=http://localhost:9000
-    volumes:
-      - ./:/app:cached
-      - /app/node_modules
-      - /app/.next
-    depends_on:
-      db:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-
   db:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123456
+      POSTGRES_PASSWORD: "123456"
       POSTGRES_DB: all_rent
     ports:
       - "5432:5432"
@@ -41,7 +16,7 @@ services:
       retries: 5
 
   minio:
-    image: minio/minio:latest
+    image: pgsty/minio:latest  # <--- FIXED: Community mirror that bypasses the 401 block
     ports:
       - "9000:9000"
       - "9001:9001"

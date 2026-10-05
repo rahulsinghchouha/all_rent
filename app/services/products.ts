@@ -134,7 +134,6 @@ export async function getProductsService(filters: ProductFilters = {}) {
   const conditions = [
     filters.status ? eq(products.status, filters.status) : undefined,
     filters.ownerId ? eq(products.ownerId, filters.ownerId) : undefined,
-    filters.excludeOwnerId ? ne(products.ownerId, filters.excludeOwnerId) : undefined,
     filters.category ? eq(products.category, filters.category) : undefined,
   ];
 

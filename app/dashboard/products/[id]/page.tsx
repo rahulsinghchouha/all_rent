@@ -52,17 +52,19 @@ export default function ProductDetailPage() {
     condition: "",
   });
 
-  // Get current user from localStorage
+  // Get current user from authenticated API
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
+    async function loadCurrentUser() {
       try {
-        const user = JSON.parse(userData);
-        setCurrentUserId(user.id);
+        const response = await fetch("/api/auth/me", { credentials: "include" });
+        const result = await response.json();
+        setCurrentUserId(result?.data?.id ?? null);
       } catch {
         setCurrentUserId(null);
       }
     }
+
+    loadCurrentUser();
   }, []);
 
   useEffect(() => {
