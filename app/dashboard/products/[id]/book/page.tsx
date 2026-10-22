@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 
@@ -253,8 +254,8 @@ function ProductMiniCard({
 
   return (
     <div className="flex items-center gap-3 bg-white rounded-2xl border border-slate-100 p-3 shadow-sm mb-5">
-      <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-slate-100">
-        <img src={img} alt={product.title} className="w-full h-full object-cover" />
+      <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-slate-100">
+        <Image src={img} alt={product.title} fill unoptimized className="object-cover" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 mb-0.5">
@@ -965,15 +966,17 @@ export default function BookingPage() {
 
               {/* Product info */}
               <div className="flex items-center gap-3 pb-4 border-b border-slate-100 mb-4">
-                <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-slate-100">
-                  <img
+                <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-slate-100">
+                  <Image
                     src={
                       Array.isArray(product.imageUrls) && product.imageUrls.length > 0
                         ? product.imageUrls[0]
                         : `https://placehold.co/56x56/f5f5f5/999?text=${encodeURIComponent(product.category)}`
                     }
                     alt={product.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    unoptimized
+                    className="object-cover"
                   />
                 </div>
                 <div>

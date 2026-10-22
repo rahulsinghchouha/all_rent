@@ -3,6 +3,7 @@
 import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
 import { updateDraft, nextStep, type ImageFile } from "@/app/store/listingSlice";
 import { fetchWithAuth } from "@/app/lib/fetcher";
+import Image from "next/image";
 import { useRef, useState } from "react";
 
 const MAX_IMAGES = 10;
@@ -18,7 +19,6 @@ export default function ImageUploadStep() {
   const [dragOver, setDragOver] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
   function validateFile(file: File): string | null {
     if (!ALLOWED_TYPES.includes(file.type)) return `${file.name}: Only JPG, PNG, WebP allowed.`;
@@ -60,7 +60,6 @@ export default function ImageUploadStep() {
       }));
 
       dispatch(updateDraft({ images: [...draft.images, ...newImages] }));
-      setUploadProgress({});
     } catch (error: unknown) {
       setErrors([error instanceof Error ? error.message : "Upload failed."]);
     } finally {
@@ -194,10 +193,12 @@ export default function ImageUploadStep() {
                 img.isCover ? "border-primary shadow-lg shadow-primary/20" : "border-border"
               }`}
             >
-              <img
+              <Image
                 src={img.preview}
                 alt="Upload preview"
-                className="w-full h-full object-cover"
+                fill
+                unoptimized
+                className="object-cover"
               />
 
               {/* Overlay */}
