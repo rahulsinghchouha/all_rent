@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 // ── Data ────────────────────────────────────────────────────────────────────
@@ -201,10 +202,12 @@ export default function DashboardPage() {
 
       {/* ── Hero ── */}
       <section className="relative h-[520px] md:h-[600px] overflow-hidden">
-        <img
+        <Image
           src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=1600&q=80"
           alt="Rent anything, anytime"
-          className="absolute inset-0 w-full h-full object-cover object-center"
+          fill
+          unoptimized
+          className="object-cover object-center"
         />
         {/* gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/20" />
@@ -314,10 +317,12 @@ export default function DashboardPage() {
                 >
                   {/* Image */}
                   <div className="relative h-48 overflow-hidden">
-                    <img
+                    <Image
                       src={item.image}
                       alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      fill
+                      unoptimized
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = `https://placehold.co/400x300/f5f5f5/999?text=${encodeURIComponent(item.category)}`;
                       }}

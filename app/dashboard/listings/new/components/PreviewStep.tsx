@@ -2,6 +2,7 @@
 
 import { useAppSelector, useAppDispatch } from "@/app/store/hooks";
 import { nextStep, prevStep, setStep } from "@/app/store/listingSlice";
+import Image from "next/image";
 
 export default function PreviewStep() {
   const dispatch = useAppDispatch();
@@ -53,7 +54,7 @@ export default function PreviewStep() {
         {/* Hero Image */}
         <div className="relative h-64 sm:h-80 bg-muted overflow-hidden">
           {coverImage ? (
-            <img src={coverImage.preview} alt={draft.title} className="w-full h-full object-cover" />
+            <Image src={coverImage.preview} alt={draft.title} fill unoptimized className="object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
               <p className="text-sm font-semibold">No images uploaded</p>
@@ -71,8 +72,8 @@ export default function PreviewStep() {
         {draft.images.length > 1 && (
           <div className="flex gap-1 p-2 overflow-x-auto">
             {draft.images.slice(0, 5).map((img) => (
-              <div key={img.id} className={`w-16 h-16 rounded-lg overflow-hidden shrink-0 border-2 ${img.isCover ? "border-primary" : "border-transparent"}`}>
-                <img src={img.preview} alt="" className="w-full h-full object-cover" />
+              <div key={img.id} className={`relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border-2 ${img.isCover ? "border-primary" : "border-transparent"}`}>
+                <Image src={img.preview} alt="" fill unoptimized className="object-cover" />
               </div>
             ))}
             {draft.images.length > 5 && (

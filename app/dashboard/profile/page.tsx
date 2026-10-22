@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
@@ -122,11 +123,13 @@ function ProductCard({ product }: { product: Product }) {
       href={`/dashboard/products/${product.id}`}
       className="group flex items-center gap-3 bg-white rounded-2xl border border-slate-100 p-3 hover:border-primary/30 hover:shadow-md transition-all duration-200"
     >
-      <div className="w-16 h-14 rounded-xl overflow-hidden shrink-0 bg-slate-100">
-        <img
+      <div className="relative w-16 h-14 rounded-xl overflow-hidden shrink-0 bg-slate-100">
+        <Image
           src={img}
           alt={product.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          fill
+          unoptimized
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
         />
       </div>
       <div className="min-w-0 flex-1">

@@ -1,45 +1,61 @@
 name: CD
 
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
     branches:
       - main
-  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  lint:
+  verify:
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    outputs:
+      is_current: ${{ steps.check.outputs.is_current }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout latest main
         uses: actions/checkout@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
         with:
-          node-version: '20.x'
-          cache: npm
+          ref: main
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Verify CI commit
+        id: check
+        env:
+          CI_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          MAIN_SHA=$(git rev-parse HEAD)
 
-      - name: Run lint
-        run: npm run lint
+          if [ "$CI_SHA" = "$MAIN_SHA" ]; then
+            echo "is_current=true" >> "$GITHUB_OUTPUT"
+            echo "CI passed for the latest main commit."
+          else
+            echo "is_current=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping publish: main has advanced since this CI run."
+          fi
 
   publish:
-    needs: lint
-    if: github.ref == 'refs/heads/main'
+    needs: verify
+    if: needs.verify.outputs.is_current == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout tested code
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -58,7 +74,7 @@ jobs:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=raw,value=latest
-            type=sha
+            type=raw,value=sha-${{ github.event.workflow_run.head_sha }}
 
       - name: Build and publish Docker image
         uses: docker/build-push-action@v6

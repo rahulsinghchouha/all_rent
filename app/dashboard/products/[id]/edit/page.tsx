@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
@@ -379,10 +380,12 @@ export default function EditProductPage() {
             {/* Summary Preview Card */}
             <div className="rounded-[28px] border border-slate-100 bg-white overflow-hidden shadow-sm">
               <div className="relative h-44 bg-slate-100">
-                <img
+                <Image
                   src={mainImage}
                   alt="Listing preview"
-                  className="h-full w-full object-cover"
+                  fill
+                  unoptimized
+                  className="object-cover"
                 />
                 <span className="absolute top-3 left-3 bg-[#ff7722]/90 text-white font-extrabold uppercase text-[9px] tracking-wider px-2 py-0.5 rounded-full">
                   Preview Card

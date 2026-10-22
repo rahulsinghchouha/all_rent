@@ -125,7 +125,7 @@ export async function POST(
       })
       .returning();
 
-    const io = (globalThis as any).io;
+    const io = global.io;
     if (io) {
       io.to(`conversation:${id}`).emit("new_message", savedMessage);
     }

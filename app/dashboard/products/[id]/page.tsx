@@ -15,6 +15,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
@@ -158,14 +159,14 @@ export default function ProductDetailPage() {
 
         <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-6">
-            <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
-              <img src={images[0]} alt={product.title} className="h-[500px] w-full object-cover" />
+            <div className="relative h-[500px] overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+              <Image src={images[0]} alt={product.title} fill unoptimized className="object-cover" />
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
               {images.slice(0, 3).map((image, index) => (
-                <div key={index} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <img src={image} alt={`${product.title} ${index + 1}`} className="h-32 w-full object-cover" />
+                <div key={index} className="relative h-32 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <Image src={image} alt={`${product.title} ${index + 1}`} fill unoptimized className="object-cover" />
                 </div>
               ))}
             </div>
