@@ -1,29 +1,27 @@
-# Multi-stage Dockerfile for Next.js 16 application
-FROM node:20-alpine AS builder
+# Install dependencies with the lockfile so local and container installs match.
+FROM node:20-bookworm-slim AS dependencies
 WORKDIR /app
-
-# Install dependencies
-COPY package.json package-lock.json* ./
-RUN npm install --legacy-peer-deps
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # Copy source and build
+FROM node:20-bookworm-slim AS builder
+WORKDIR /app
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY package.json package-lock.json ./
 COPY . .
+ENV DATABASE_URL=postgres://postgres:123456@localhost:5432/all_rent
 RUN npm run build
 
-## Production image
-FROM node:20-alpine AS runner
+# Run the custom Next.js and Socket.IO server.
+FROM node:20-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
 
-# Copy built artifacts + node_modules
-COPY --from=builder /app/.next .next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/node_modules ./node_modules
-
-# Migration files + runner script, needed to apply schema on startup
-COPY --from=builder /app/drizzle ./drizzle
-COPY --from=builder /app/scripts ./scripts
+COPY --from=builder --chown=node:node /app ./
+USER node
 
 EXPOSE 3000
-CMD ["sh", "-c", "npx tsx scripts/migrate.ts && npm start"]
+CMD ["sh", "-c", "./node_modules/.bin/tsx scripts/migrate.ts && ./node_modules/.bin/tsx server.ts"]
