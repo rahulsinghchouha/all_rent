@@ -90,7 +90,11 @@ async function startServer() {
 
   const io = new Server(httpServer, {
     cors: {
-      origin: "http://localhost:3000",
+      origin: [
+        "http://localhost:3000",
+        "https://rentmanager.site",
+        "https://www.rentmanager.site",
+      ],
       credentials: true,
     },
   });
