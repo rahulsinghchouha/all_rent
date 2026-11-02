@@ -17,7 +17,7 @@ export default function SplashPage() {
 
                     {/* Brand */}
                     <h1 className="text-4xl font-bold text-primary-foreground tracking-tight font-heading">
-                        Rental Flow
+                        Rental Flows
                     </h1>
                     <p className="text-primary-foreground/85 text-base mt-1 mb-8 font-sans">
                         Rent Anything. Anytime.
