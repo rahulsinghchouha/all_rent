@@ -18,6 +18,21 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Run with Docker
+
+Make sure Docker Desktop is running. Copy the Docker settings from `.env.example` into your local `.env` file (which is ignored by Git), replace the placeholder passwords and token secrets with strong values, then build and start the app with its PostgreSQL and MinIO services:
+
+```bash
+# Add the variables from .env.example to .env, then:
+docker compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000). The app container runs the database migrations before starting the Next.js and Socket.IO server. MinIO's console is available at [http://localhost:9001](http://localhost:9001) with the local Compose credentials `minioadmin` / `minioadmin`.
+
+Stop the containers with `Ctrl+C`, or run `docker compose down`. Persistent database and image data are kept in Docker volumes; to remove those too, run `docker compose down --volumes`.
+
+Compose reads its values from `.env`; the database and MinIO credentials and token secrets are not hardcoded in `docker-compose.yml`. Use URL-safe characters in `POSTGRES_PASSWORD`, since Compose embeds it in the database connection URL. Configure secure credentials and secrets before using this setup outside a local environment.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

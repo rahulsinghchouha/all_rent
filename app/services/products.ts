@@ -1,7 +1,7 @@
 import { db } from "@/app/utils/dbConnect";
 import { products } from "@/app/tables/productsTable";
 import { insertProductSchema, InsertProduct } from "@/app/tablesValidation/productsValidation";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export async function updateProductService(
   id: string,
